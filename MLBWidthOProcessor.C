@@ -2,6 +2,19 @@
  * Project   : MLBWOProcessor - A processor for TopMassSecVtx/mlbwidth output     *
  * Package   : ROOT                                                               *
  * Root Macro: root -l<ENTER>, .L MLBWOProcessor.C                                *
+ *                                                                                *
+ * A standalone application to handle output from Benjamin Stieger's mlbwidth     *
+ *                                                                                *
+ * NOTE: You should not have to change anything except for the array contents     *
+ *       to produce output with this code! To compile:                            *
+ *                                                                                *
+ *          g++ -o <executable name you want> MLBWidthOProcessor.C                *
+ *                  `root-config --cflags --glibs`                                *
+ *                                                                                *
+ *       Then run the executable with the first argument as the file you want     *
+ *       to process.                                                              *
+ *                                                                                *
+ * Author: Evan Coleman, 2015                                                     *
  **********************************************************************************/
 
 #include <cstdlib>
@@ -33,16 +46,59 @@
 using std::cout;
 using std::endl;
 
-
-//magic (for now)
+//***************************************************************************//
+// Global Variables (to be changed by user in main())
+//  o char*[] leps - contains the lepton combinations we care about in the
+//                   final state
+//  o char*[] procs - contains the regular expressions separating processes
+//                    from one another (see TRegExp for more information,
+//                    or regexr.com). Note they should not contain "//(g)"
+//                    formatting, and escape sequences can cause errors.
+//  o char*[] procReplace - contains the names we'd like to use to replace the
+//                          given process names when we output everything to
+//                          a MassFit_print-formatted root file
+//  o char*[] dataprocs - Key words to look for in the titles of data
+//                        data histograms. They should correspond in order 
+//                        to leps
+//  o char*[] yieldLaTeX - The LaTeX to use for each procs[i] name in the 
+//                         yields table
+//  o double[][] eCounts - Keeps track of event yields for each process-
+//                         final-state pair, including data
+//                         [leps.size()][procs.size()+1]
+//  o double[][] eErrors - Keeps track of event yields for each process-
+//                         final-state pair, including data
+//***************************************************************************//
 const char* leps[5]  = { "E", "EE", "EM", "MM", "M" };
 const char* procs[6] = { "DYJets", "WW", "^W[1234]?Jets", "QCD", "SingleTbar", "TTW?Jets" };
 const char* procReplace[6] = { "DrellYan", "Diboson", "WJets", "QCD", "SingleTop", "TTbar_1" };
 const char* dataprocs[5] = { "SingleElectron2012A", "DoubleElectron2012A", 
                              "MuEG2012A", "DoubleMu2012A", "SingleMu2012A" };
+const char* yieldLaTeX[6] = { "Drell-Yan", "Diboson", "W+Jets", "QCD", "Single-top", 
+                              "$t\\bar{t}$" };
+const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" }
 
-double eCounts[5][7];
-double eErrors[5][7];
+/////////////////////////////////////////////////////
+//                      Utils                      //
+/////////////////////////////////////////////////////
+
+#define GETARRSIZE(arr) (sizeof((arr))/sizeof((arr[0])))
+const int lepsSize        = GETARRSIZE(leps);
+const int procsSize       = GETARRSIZE(procs);
+const int procReplaceSize = GETARRSIZE(procReplace);
+const int dataprocsSize   = GETARRSIZE(dataprocs);
+const int yieldLaTeXSize  = GETARRSIZE(yieldLaTeX);
+const int lepsLaTeXSize  = GETARRSIZE(lepsLaTeX);
+
+double eCounts[lepsSize][procsSize+1];
+double eErrors[lepsSize][procsSize+1];
+
+//Returns true if the arrays are sized properly
+bool validateArrays() {
+  return (lepsSize      == lepsLaTeXSize
+           && lepsSize  == dataprocsSize
+           && procsSize == procReplaceSize
+           && procsSize == yieldLaTeXSize);
+}
 
 /////////////////////////////////////////////////////
 //        Formatting Yields Data in LaTeX          //
@@ -52,7 +108,7 @@ double eErrors[5][7];
 TString GetLatex(int lep, int proc) {
   // output a kickin' TString
   char b[128];
-  sprintf(b, "%.0f $\\pm$ %.0f", round(eCounts[lep-1][proc]), round(eErrors[lep-1][proc]));
+  sprintf(b, "%.0f $\\pm$ %.0f", round(eCounts[lep][proc]), round(eErrors[lep][proc]));
   return TString(b);
 }
 
@@ -64,20 +120,20 @@ TString GetLatexSum(bool rowSum, int ind) {
   //complicated sum
   if(rowSum) {
     // if we sum via rows, go through the rows
-    for(int i=0; i<5; i++) {
+    for(int i=0; i<lepsSize; i++) {
       sum+=eCounts[i][ind];
       err = sqrt(pow(err,2) + pow(eErrors[i][ind],2));
     }
   } else {
     // do we want to sum all MC? if ind>=0, no
     if(ind>=0) {
-      for(int i=0; i<6; i++) {
+      for(int i=0; i<procsSize; i++) {
         sum+=eCounts[ind][i];
         err = sqrt(pow(err,2) + pow(eErrors[ind][i],2));
       }
     } else {
-      for(int i=0; i<5; i++) {
-        for(int j=0; j<6; j++) {
+      for(int i=0; i<lepsSize; i++) {
+        for(int j=0; j<procsSize; j++) {
           sum += eCounts[i][j];
           err = sqrt(pow(err,2) + pow(eErrors[i][j],2));
         }
@@ -98,20 +154,20 @@ TString GetLatexRatio(int ind) {
   double data    = 0;
   double errData = 0;
   //if we want to look at data/MC for just one column, do so
-  if(ind<6 && ind>0) {
-    data = eCounts[ind-1][6];
-    errData = eErrors[ind-1][6];
+  if(ind<=lepsSize && ind>0) {
+    data = eCounts[ind-1][procsSize];
+    errData = eErrors[ind-1][procsSize];
 
-    for(int i=0; i<6; i++) {
+    for(int i=0; i<procsSize; i++) {
       sumMC += eCounts[ind-1][i];
       errMC =  sqrt(pow(errMC,2) + pow(eErrors[ind-1][i],2));
     }
   } else {
     // if not, sum all of MC and data and take the ratios
-    for(int i=0; i<5; i++) {
+    for(int i=0; i<lepsSize; i++) {
       data    += eCounts[i][ind];
       errData =  sqrt(pow(errData,2) + pow(eErrors[i][ind],2));
-      for(int j=0; j<6; j++) {
+      for(int j=0; j<procsSize; j++) {
         sumMC += eCounts[i][j];
         errMC = sqrt(pow(errMC,2) + pow(eErrors[i][j],2));
       }
@@ -144,7 +200,7 @@ TString formatName(const char* histoName) {
     if(TString(procPart->At(0)->GetName()).Contains("Data")) proces = TString("Data");
     else {
       cout<<" - formatting "<<proces<<endl;
-      for(int pInd = 0; pInd<6; pInd++) {
+      for(int pInd = 0; pInd<procsSize; pInd++) {
         if(proces.Contains(TRegexp(procs[pInd]))) {
             cout<<" -- match found, "<<procs[pInd]<<endl;
             proces = procReplace[pInd];
@@ -174,14 +230,14 @@ void getYields(const char* argv[]) {
   f->cd();
 
   //very inefficient, but for now it works
-  //loop over all magic and figure out the event counts
-  for(int i=0; i<5; i++) {
+  //loop over all procs, leps and figure out the event counts
+  for(int i=0; i<lepsSize; i++) {
     char a[128];
     sprintf(a, "mlbwa_%s_Count", leps[i]);
     TDirectory *tDir = (TDirectory*) f->Get(a);
     TList *alok = tDir->GetListOfKeys();
 
-    for(int j=0; j<6; j++) {
+    for(int j=0; j<procsSize; j++) {
       for(int k=0; alok->At(k)->GetName() != alok->Last()->GetName(); k++) {
         if(TString(alok->At(k)->GetName()).Contains(TRegexp(procs[j]))) {
           char b[128];
@@ -201,12 +257,17 @@ void getYields(const char* argv[]) {
     if(d == "") { exit(EXIT_FAILURE); }
 
     TH1F *tth = (TH1F*) f->Get(d);
-    eCounts[i][6] = tth->GetEntries();
+    eCounts[i][procsSize] = tth->GetEntries();
     double integral = tth->GetSumOfWeights();
-    eErrors[i][6] = tth->GetBinError(2)*eCounts[i][6]/integral;
+    eErrors[i][procsSize] = tth->GetBinError(2)*eCounts[i][procsSize]/integral;
     delete tth;
   }
 
+  //Get a string to tell us how many columns we want (size leps + 1)
+  char cols[] = "c";
+  for(int i=0; i<lepsSize; i++) {
+    strcat(cols, "c");
+  }
 
   //print out LaTeX:
   //formatting
@@ -216,32 +277,48 @@ void getYields(const char* argv[]) {
   cout<<"\\usepackage{amsfonts}"<<endl;
   cout<<"\\usepackage{amssymb}"<<endl;
   cout<<"\\usepackage{hyperref}\n\n"<<endl;
-  cout<<"\\usepackage[margin=0.25in]{geometry}"<<endl;
+  cout<<"\\usepackage[margin=0.0025in]{geometry}"<<endl;
   cout<<"\\begin{document}"<<endl;
-  cout<<"\\begin{tabular}{l|cccccc} \\\\"<<endl;
-  cout<<"Sample & e & ee & e$\\mu$ & $\\mu\\mu$ & $\\mu$ & Sum \\\\ \\hline\\hline"<<endl;
+  cout<<"\\begin{tabular}{l|"<<cols<<"} \\\\"<<endl;
 
-  //accessing the array (yes, I know, there's a better way, I don't care right now)
-  cout<<"Drell-Yan & "<<GetLatex(1,0)<<" & "<<GetLatex(2,0)<<" & "<<GetLatex(3,0)<<" & "
-      <<GetLatex(4,0)<<" & "<<GetLatex(5,0)<<" & "<<GetLatexSum(true, 0)<<"\\\\"<<endl;
-  cout<<"Diboson & "<<GetLatex(1,1)<<" & "<<GetLatex(2,1)<<" & "<<GetLatex(3,1)<<" & "
-      <<GetLatex(4,1)<<" & "<<GetLatex(5,1)<<" & "<<GetLatexSum(true, 1)<<"\\\\"<<endl;
-  cout<<"W+Jets & "<<GetLatex(1,2)<<" & "<<GetLatex(2,2)<<" & "<<GetLatex(3,2)<<" & "
-      <<GetLatex(4,2)<<" & "<<GetLatex(5,2)<<" & "<<GetLatexSum(true, 2)<<"\\\\"<<endl;
-  cout<<"QCD & "<<GetLatex(1,3)<<" & "<<GetLatex(2,3)<<" & "<<GetLatex(3,3)<<" & "
-      <<GetLatex(4,3)<<" & "<<GetLatex(5,3)<<" & "<<GetLatexSum(true, 3)<<"\\\\"<<endl;
-  cout<<"Single-top & "<<GetLatex(1,4)<<" & "<<GetLatex(2,4)<<" & "<<GetLatex(3,4)<<" & "
-      <<GetLatex(4,4)<<" & "<<GetLatex(5,4)<<" & "<<GetLatexSum(true, 4)<<"\\\\"<<endl;
-  cout<<"$t\\bar{t}$ & "<<GetLatex(1,5)<<" & "<<GetLatex(2,5)<<" & "<<GetLatex(3,5)<<" & "
-      <<GetLatex(4,5)<<" & "<<GetLatex(5,5)<<" & "<<GetLatexSum(true, 5)<<"\\\\\\hline"<<endl;
-  cout<<"Total MC & "<<GetLatexSum(false,0)<<" & "<<GetLatexSum(false,1)<<" & "<<GetLatexSum(false,2)<<" & "
-      <<GetLatexSum(false,3)<<" & "<<GetLatexSum(false,4)<<" & "<<GetLatexSum(false,-1)<<"\\\\\\hline"<<endl;
-  cout<<"Data & "<<GetLatex(1,6)<<" & "<<GetLatex(2,6)<<" & "<<GetLatex(3,6)<<" & "
-      <<GetLatex(4,6)<<" & "<<GetLatex(5,6)<<" & "<<GetLatexSum(true,6)<<"\\\\\\hline\\hline"<<endl;
-  cout<<"Data/MC & "<<GetLatexRatio(1)<<" & "<<GetLatexRatio(2)<<" & "<<GetLatexRatio(3)<<" & "
-      <<GetLatexRatio(4)<<" & "<<GetLatexRatio(5)<<" & "<<GetLatexRatio(6)<<"\\\\"<<endl;
+  //Print out the table header
+  cout<<"Sample & ";
+  for(int i=0; i<lepsLaTeXSize; i++) {
+    cout<<lepsLaTeX[i]<<" & ";
+  }
+  cout<<"Sum \\\\ \\hline\\hline"<<endl;
 
-  //we did it! end the document
+  //Printing out the yields for each process
+  for(int i=0; i<procsSize; i++) {
+      cout<<yieldLaTeX[i]<<" & ";
+    for(int j=0; j<lepsSize; j++) {
+      cout<<GetLatex(j,i)<<" & ";
+    }
+    cout<<GetLatexSum(true,i)<<"\\\\"<<(i==procsSize-1 ? "\\hline" : "")<<endl;
+  }
+ 
+  //Print out the total MC yield
+  cout<<"Total MC & ";
+  for(int i=0; i<lepsSize; i++) {
+    cout<<GetLatexSum(false,i)<<" & ";
+  }
+  cout<<GetLatexSum(false,-1)<<"\\\\"<<endl;
+
+  //Print out the data yield
+  cout<<"Data & ";
+  for(int i=0; i<lepsSize; i++) {
+    cout<<GetLatex(i,lepsSize+1)<<" & ";
+  }
+  cout<<GetLatexSum(true,lepsSize+1)<<"\\\\\\hline\\hline"<<endl;
+  
+  //Print out the data:MC ratio
+  cout<<"Data/MC & ";
+  for(int i=1; i<=procsSize;i++) {
+    cout<<GetLatexRatio(i)<<" & ";
+  }
+  cout<<"\\\\"<<endl;
+
+  //We did it! End the document
   cout<<"\\end{tabular}"<<endl;
   cout<<"\\end{document}"<<endl;
 }
@@ -375,11 +452,6 @@ void createMFOutfile(const char* argv[]) {
   }
 
   output->cd();
-
-  // annoying tidbit that needs to be fixed
-  TH1F *mlbwa__QCD_EE = new TH1F("mlbwa_QCD_EE","mlbwa_QCD_EE",100,0,200);
-  mlbwa__QCD_EE->Write();
-
   output->Close();
 }
 
@@ -387,7 +459,13 @@ void createMFOutfile(const char* argv[]) {
 int main(int argc, const char* argv[]) {
 
   cout<<"Analyzing the output: "<<argv[1]<<"\n\n"<<endl;
-  
+ 
+  if(!validateArrays()) {
+    cout<<"Arrays not formatted properly. Please check your "
+        <<"input and recompile."<<endl;
+    exit(EXIT_FAILURE);
+  }
+
   cout<<"Here is the LaTeX for the yields table:"<<endl;
   getYields(argv);
 

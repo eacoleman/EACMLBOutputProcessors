@@ -12,7 +12,7 @@
  *                                                                             *
  *      .L MassFit_print.C                                                     *
  *      j = new MassFit()                                                      *
- *      j->fitPoint()     // for a single mass                                 *
+ *      j->fitPoint(int)  // for a single mass                                 *
  *      j->fitAll()       // for all masses                                    *
  *      j->findMin()      // to find the minimum after fitAll()                *
  *      j->printLL()      // print and be done!                                *
@@ -732,7 +732,7 @@ void MassFit::setup()
 
     minTemplate = 0;
     maxTemplate = mcSignalTemplMass.size();
-    nominalTemplate = find(mcSignalTemplMass.begin(),mcSignalTemplMass.end(),172.5)-mcSignalTemplMass.begin();
+    nominalTemplate = 0;
     toyTemplate = nominalTemplate;
 
     scale = 1;
@@ -1646,7 +1646,7 @@ void MassFit::calibration(int number)
 
     nFitFailed = 0;
     nFitTried = 0;
-    int min=nominalTemplate-3, max=nominalTemplate+4;
+    int min=nominalTemplate, max=nominalTemplate+1;
     TVectorD x(max-min+1), y(max-min+1), ex(max-min+1), ey(max-min+1);
 
     int pts=0;
@@ -1659,8 +1659,11 @@ void MassFit::calibration(int number)
     quietFit(true);
 
     TFile * out = new TFile(name+".root","RECREATE");
+    cout << "Opened TFile" << endl;
+
     for (i = min;i!=max;++i)
     {
+        cout << "i is " << i << endl;
         do_toys(number,i);
         toy_mean->Fit("gaus");
 
@@ -1904,31 +1907,6 @@ void MassFit::printMassRange()
     for (vector<float>::iterator i = mcSignalTemplMass.begin(); i!= mcSignalTemplMass.end(); ++i)
         cout << i-mcSignalTemplMass.begin()<<" "<<*i<<endl;
     cout << "Nominal template (mass=172.5): " << nominalTemplate<<endl;
-}
-
-int main(int argc, const char* argv[])
-{
-
-    MassFit *j;
-    if (argc>2) {
-        cout << argv[2]<<endl;
-        j = new MassFit(argv[2]);
-    } else {
-        j = new MassFit();
-    }
-    cout << "Using : "<< j->SystFileLocation<<endl;
-    j->fixBackground(3);
-    j->fixBackground();
-    j->fitAll();
-    j->findMin();
-    j->printLL(true, "LL");
-    j->calibration(1000);
-    j->calib();
-    ofstream myfile;
-    myfile.open("./Mass.txt");
-    myfile << "Fit mass  = "<< j->fitMass<<"; cal mass = "<<j->calMass<<endl;
-    myfile.close();
-
 }
 
 void MassFit::cmsprelim()
