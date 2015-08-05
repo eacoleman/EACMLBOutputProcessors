@@ -340,7 +340,7 @@ TStyle* MassFit::setTDRStyle() {
 }
 
 void MassFit::calib(char fn[100],char tag[20]){
-    float massPoints[5] = { 169.5, 171.5, 172.5, 173.5, 175.5};
+    float massPoints[1] = { 1 };// { 169.5, 171.5, 172.5, 173.5, 175.5};
     //float fitMass = 172.885;//174.03;//172.88;//;173.231;
     bool reduced = true;
     float fitUnc = 0.16;//0.596;
@@ -381,14 +381,14 @@ void MassFit::calib(char fn[100],char tag[20]){
     TFile* theFile = new TFile (fn) ;
     int points = 0,minP,maxP;
     float minTMass = 0, maxTMass = 0;
-    for (int i = 0;i<5;++i) {
+    for (int i = 0;i<1;++i) {
         float mass = massPoints[i];
         sprintf(hname,"meanMass_%g", mass);
         TH1F*   toy_mean  = (TH1F*) gDirectory->Get(hname);
         cout << hname << endl;
 
-        if (toy_mean == 0) continue;
-        if (reduced && (mass<166||mass>180)) continue;
+//        if (toy_mean == 0) continue;
+//        if (reduced && (mass<166||mass>180)) continue;
 
         ++points;
         if (minTMass==0.) {minTMass = mass; minP= i;}
@@ -403,10 +403,12 @@ void MassFit::calib(char fn[100],char tag[20]){
     int pts = 0;
     for (int i = minP;i<=maxP;++i,++pts) {
         float mass = massPoints[i];
+        cout<<"Mass is "<<mass<<endl;
         sprintf(hname,"meanMass_%g", mass);
         TH1F* toy_mean  = (TH1F*) gDirectory->Get(hname);
         toy_mean->Fit("gaus","Q");
 
+        cout<<"410"<<endl;
         sprintf(hname,"biasMass_%g", mass);
         TH1F* toy_bias= (TH1F*) gDirectory->Get(hname) ;
         sprintf(hname,"errMass_%g", mass);
@@ -414,6 +416,7 @@ void MassFit::calib(char fn[100],char tag[20]){
         sprintf(hname,"pullMass_%g", mass);
         TH1F* toy_pull= (TH1F*) gDirectory->Get(hname) ;
 
+        cout<<"419"<<endl;
         toy_bias->Fit("gaus","Q");
         toy_pull->Rebin(5);
         toy_pull->Fit("gaus","Q");
@@ -428,6 +431,7 @@ void MassFit::calib(char fn[100],char tag[20]){
         biasErrV(pts)=toy_bias->GetFunction("gaus")->GetParameter(2)/sqrt(1);
         pullErrV(pts)=toy_pull->GetFunction("gaus")->GetParError(1)/sqrt(1);
         pullWErrV(pts)=toy_pull->GetFunction("gaus")->GetParError(2)/sqrt(1);
+        cout<<"434"<<endl;
 
         cout << "Template mass "<< mass<< " - Mass: " << meanV[pts] <<" +/- "<<meanErrV[pts];
         cout << "\t  Unc: " << toy_error->GetMean();
@@ -538,6 +542,7 @@ void MassFit::calib(char fn[100],char tag[20]){
 
     cout << "Properties at 172.5:\n";
     TH1F*   toy_err  = (TH1F*) gDirectory->Get("errMass_172.5") ;
+    cout << "Toy err is "<<toy_err<<endl;
     toy_err->GetXaxis()->SetTitle("Uncertainty [GeV]");
     toy_err->GetXaxis()->SetNdivisions(505);
     toy_err->GetYaxis()->SetTitleOffset(1.4);
@@ -1322,14 +1327,14 @@ void MassFit::printLL(bool toFile, char* name)
 void MassFit::do_toys(int n_exp, int templateToUse)
 {
     quietFit(true);
-
+    cout<<"1325"<<endl;
     if (!systematics || !systematicsPDF) cout << "Template mass "<< mcSignalTemplMass[templateToUse]<<endl;
     else cout << "PDF "<< templateToUse<<endl;
     if (toy_error!=0) {
         delete toy_mean; delete toy_error; delete toy_pull; delete toy_bias;
     }
     if (toy_LL!=0) delete toy_LL;
-
+    cout<<"1332"<<endl;
     float massPoint = 172.5;
     if (!systematics || !systematicsPDF) massPoint = mcSignalTemplMass[templateToUse];
 
@@ -1339,6 +1344,7 @@ void MassFit::do_toys(int n_exp, int templateToUse)
     toy_pull   = new TH1F("pull"  ,"pull",100, -5, 5);
     toy_LL     = new TH2F("LL"  ,"LL residuals",9, -0.5, 8.5,200,-100,100);
 
+    cout<<"1342"<<endl;
     toy_mean->GetXaxis()->SetNdivisions(50205);
     toy_bias->GetXaxis()->SetNdivisions(50205);
     toy_mean->SetFillColor(44);
@@ -1346,7 +1352,9 @@ void MassFit::do_toys(int n_exp, int templateToUse)
     toy_error->SetFillColor(44);
     toy_pull->SetFillColor(44);
     int j, stat;
+        cout<<" - n_exp = "<<n_exp<<endl;
     for (int i=0;i<n_exp;i++){
+        cout<<"  - i = "<<i<<endl;
         int countFailures = 0;
         do {
             do { j = generate_toy(templateToUse);} while (j==0);
@@ -1363,6 +1371,7 @@ void MassFit::do_toys(int n_exp, int templateToUse)
         }
         nFitFailed+=countFailures;
 
+        cout<<"1369"<<endl;
         pair<double,double> result = findMinFake();
 
         if (result.second>0.) {
@@ -1447,6 +1456,7 @@ int MassFit::generate_toy(int templateToUse)
     }
     toyDataHisto = (TH1F*)dataHisto->Clone("toyDataHisto");
     toyDataHisto->Reset();
+    cout<<"1454"<<endl;
 
     char hname[50], tag[50];
     int n;
@@ -1454,12 +1464,13 @@ int MassFit::generate_toy(int templateToUse)
     for (int itype = 0;itype!=maxType;++itype) {
         delete datasets[type[itype]];
         if (!fixedSample) {
-
+            cout<<"1462"<<endl;
             if (!systematics || !systematicsPDF) sprintf(tag,"%s%g",type[itype],mcSignalTemplMass[templateToUse]);
             else sprintf(tag,"%s_pdf%i",type[itype],templateToUse);
             int binLow = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(lowerMassCut);
             int binHigh = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(upperMassCut);
 
+            cout<<"1468"<<endl;
             if (systematics) {
                 n = _random.Poisson( (float) mcSignalTemplHistosScaled_gen[tag]->Integral(binLow, binHigh));
             } else {
@@ -1471,6 +1482,7 @@ int MassFit::generate_toy(int templateToUse)
             cout << ", with Poisson mean "<< (float) mcSignalTemplHistosScaled[tag]->Integral(binLow, binHigh) << endl;
             generatedSignal[type[itype]] = n; totalGeneratedSignal+=n;
 
+            cout<<"1480"<<endl;
             if (systematics) {
                 n = _random.Poisson( (float) mcTotalBackgroundHistoScaled_gen[type[itype]]->Integral(binLow, binHigh));
             } else {
@@ -1480,19 +1492,23 @@ int MassFit::generate_toy(int templateToUse)
             cout << "Generate "<<n << " " << " background events";
             cout << ", with Poisson mean "<< (float) mcTotalBackgroundHistoScaled[type[itype]]->Integral(binLow, binHigh) << endl;
         } else {
-            sprintf(tag,"%s%g",type[itype],mcSignalTemplMass[4]);
+            cout<<"1488"<<endl;
+            sprintf(tag,"%s%g",type[itype],mcSignalTemplMass[0]);
             int binLow = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(lowerMassCut);
             int binHigh = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(upperMassCut);
             cout << tag<<endl;
             double sigProb;
             if (systematics) {
+                cout<<"1494"<<endl;
                 if (systematicsPDF) sprintf(tag,"%s_pdf%i",type[itype],templateToUse);
                 sigProb = mcSignalTemplHistosScaled_gen[tag]->Integral(binLow, binHigh) /
                     (mcSignalTemplHistosScaled_gen[tag]->Integral(binLow, binHigh)+mcTotalBackgroundHistoScaled_gen[type[itype]]->Integral(binLow, binHigh));
             } else {
+                cout<<"1498"<<endl;
                 sigProb = mcSignalTemplHistosScaled[tag]->Integral(binLow, binHigh) /
                     (mcSignalTemplHistosScaled[tag]->Integral(binLow, binHigh)+mcTotalBackgroundHistoScaled[type[itype]]->Integral(binLow, binHigh));
             }
+            cout<<"1501"<<endl;
             n = _random.Binomial(nTotSample[itype], sigProb);
             cout << "Generate "<< n << " " << type[itype]<<" signal events of ";
             if (!systematics || !systematicsPDF) cout << "mass "<<mcSignalTemplMass[templateToUse];
@@ -1509,6 +1525,7 @@ int MassFit::generate_toy(int templateToUse)
             cout << "Generate "<< generatedBkg[type[itype]] << " " << " background events\n";
         }
 
+        cout<<"1517"<<endl;
         if (systematics) {
             if (!systematicsPDF) sprintf(hname,"signal_gen%s%g", type[itype], mcSignalTemplMass[templateToUse]);
             else sprintf(hname,"signal_gen%s%i", type[itype], templateToUse);
@@ -1519,7 +1536,7 @@ int MassFit::generate_toy(int templateToUse)
         datasets[type[itype]] = w->pdf(hname)->generateBinned(*topMass, generatedSignal[type[itype]])->createHistogram(hname,*topMass);
         cout << hname<<endl;
 
-
+        cout<<"1527"<<endl;
         if (systematics) {
             sprintf(hname,"background_gen%s", type[itype]);
         } else {

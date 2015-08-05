@@ -69,8 +69,8 @@ using std::endl;
 //                         final-state pair, including data
 //***************************************************************************//
 const char* leps[5]  = { "E", "EE", "EM", "MM", "M" };
-const char* procs[6] = { "DYJets", "WW", "^W[1234]?Jets", "QCD", "SingleTbar", "TTW?Jets" };
-const char* procReplace[6] = { "DrellYan", "Diboson", "WJets", "QCD", "SingleTop", "TTbar_1" };
+const char* procs[6] = { "DYJets", "WW", "[^T]W[1234]?Jets", "QCD", "SingleTbar", "TTW?Jets" };
+const char* procReplace[6] = { "DrellYan", "Diboson", "WJets", "QCD", "SingleTop", "TTbar_1p5" };
 const char* dataprocs[5] = { "SingleElectron2012A", "DoubleElectron2012A", 
                              "MuEG2012A", "DoubleMu2012A", "SingleMu2012A" };
 const char* yieldLaTeX[6] = { "Drell-Yan", "Diboson", "W+Jets", "QCD", "Single-top", 
@@ -80,14 +80,14 @@ const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" }
 /////////////////////////////////////////////////////
 //                      Utils                      //
 /////////////////////////////////////////////////////
-
 #define GETARRSIZE(arr) (sizeof((arr))/sizeof((arr[0])))
+
 const int lepsSize        = GETARRSIZE(leps);
 const int procsSize       = GETARRSIZE(procs);
 const int procReplaceSize = GETARRSIZE(procReplace);
 const int dataprocsSize   = GETARRSIZE(dataprocs);
 const int yieldLaTeXSize  = GETARRSIZE(yieldLaTeX);
-const int lepsLaTeXSize  = GETARRSIZE(lepsLaTeX);
+const int lepsLaTeXSize   = GETARRSIZE(lepsLaTeX);
 
 double eCounts[lepsSize][procsSize+1];
 double eErrors[lepsSize][procsSize+1];
@@ -201,7 +201,7 @@ TString formatName(const char* histoName) {
     else {
       cout<<" - formatting "<<proces<<endl;
       for(int pInd = 0; pInd<procsSize; pInd++) {
-        if(proces.Contains(TRegexp(procs[pInd]))) {
+        if((delmtr+proces).Contains(TRegexp(procs[pInd]))) {
             cout<<" -- match found, "<<procs[pInd]<<endl;
             proces = procReplace[pInd];
             cout<<" -- procs now = "<<proces<<endl;
@@ -398,7 +398,7 @@ void createMFOutfile(const char* argv[]) {
     TList *alokHistos = (TList*)      cDir->GetListOfKeys();
 
     //loop through the histograms in the current directory 
-    for(int ihisto=0; alokHistos->At(ihisto) != alokHistos->Last(); ihisto++) {
+    for(int ihisto=0; alokHistos->At(ihisto-1) != alokHistos->Last(); ihisto++) {
       // don't consider the graph objects
       if(TString(alokHistos->At(ihisto)->GetName()).Contains("Graph_")) continue; 
 
@@ -413,7 +413,7 @@ void createMFOutfile(const char* argv[]) {
 
       // if the histogram already exists, add thisto to the existing one
       // messy, but removes the need for magic
-      for(int iout=0; outkeys->At(iout) != outkeys->Last(); iout++) {
+      for(int iout=0; outkeys->At(iout-1) != outkeys->Last(); iout++) {
         if(outkeys->At(iout)->GetName() == cloneName) {
           cout<<" - found another histogram in output with name "<<cloneName<<endl;
           TH1F *theHisto = (TH1F*) output->Get(cloneName);
@@ -438,17 +438,6 @@ void createMFOutfile(const char* argv[]) {
       delete thisto;
       delete tclone;
     }
-
-    // have to work with the last (data) histogram specially because ROOT
-    // doesn't create very nice iterators for directories.
-    TString dataName = formatName(alokHistos->Last()->GetName());
-    TH1F *thisto = (TH1F*) cDir->Get(alokHistos->Last()->GetName());
-    TH1F *tclone = (TH1F*) thisto->Clone(dataName);
-    output->cd();
-    tclone->Write();
-    f->cd();
-    delete thisto;
-    delete tclone;
   }
 
   output->cd();
