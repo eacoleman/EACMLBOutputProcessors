@@ -225,7 +225,11 @@ TString formatName(const char* histoName, double signalWidth) {
             for(int sigCheck=0; sigCheck<signalNamesLength; sigCheck++) {
               if(proces=signalNames[sigCheck]) {
                 cout<<" --- procs is a signal process"<<endl;
+<<<<<<< HEAD
                 char* wid[32];
+=======
+                char wid[32];
+>>>>>>> 472ed8fd593a8834330bee4be846316cdba306ca
                 sprintf(wid, "%.3f",signalWidth);
                 proces += delmtr+TString(wid);
                 cout<<" --- procs now = "<<proces<<endl;
