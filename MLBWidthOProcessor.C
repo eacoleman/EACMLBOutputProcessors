@@ -342,7 +342,7 @@ void getYields(const char* argv[]) {
   //Print out the data:MC ratio
   cout<<"Data/MC & ";
   for(int i=1; i<=procsSize;i++) {
-    cout<<GetLatexRatio(i)<<" & ";
+    cout<<GetLatexRatio(i)<<(i==procsSize ? "" : " & ");
   }
   cout<<"\\\\"<<endl;
 
@@ -501,6 +501,7 @@ void createMFOutfile(const char* argv[]) {
 
       // get the corresponding nominal histogram from the outfile
       TH1F *nomHisto = (TH1F*) output->Get(formatName(maxHName,nominalWidth));
+      cout<<"--------- nomHisto is "<<nomHisto<<" and maxClone is "<<maxClone<<endl;
 
       // for each interpolation, create a morphed histogram and write to outfile
       for(int i=interpolations; i>0; i--) {
