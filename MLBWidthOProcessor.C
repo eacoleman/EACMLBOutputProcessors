@@ -102,7 +102,7 @@ double eErrors[lepsSize][procsSize+1];
 
 double nominalWidth = 1.5;
 vector<std::pair<double, TString> > moreFiles;
-bool interpolate = true;
+bool interpolate = false;
 int interpolations = 0;
 
 //Returns true if the arrays are sized properly
@@ -223,10 +223,11 @@ TString formatName(const char* histoName, double signalWidth) {
             // loop through the signal names and format with signalWidth if
             // there's a match (i.e., mlbwa__TTbar_7.5_E)
             for(int sigCheck=0; sigCheck<signalNamesLength; sigCheck++) {
-              if(proces=signalNames[sigCheck]) {
+              if(proces==signalNames[sigCheck]) {
+                cout<<" --- checking against "<<signalNames[sigCheck]<<endl;
                 cout<<" --- procs is a signal process"<<endl;
                 char wid[32];
-                sprintf(wid, "%.3f",signalWidth);
+                sprintf(wid, "%.2f",signalWidth);
                 proces += delmtr+TString(wid);
                 cout<<" --- procs now = "<<proces<<endl;
                 break;
@@ -553,7 +554,7 @@ int main(int argc, const char* argv[]) {
     cout<<"\n"<<endl;
   }
 
-  cout<<"Analyzing the output: "<<argv[2]<<"width nominal width "<<argv[1]<<"\n\n"<<endl;
+  cout<<"Analyzing the output: "<<argv[2]<<" with nominal width "<<argv[1]<<"\n\n"<<endl;
   nominalWidth = TString(argv[1]).Atof();
 
   if(!validateArrays()) {
