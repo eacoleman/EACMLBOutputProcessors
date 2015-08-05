@@ -43,11 +43,15 @@
 #include "TString.h"
 #include "TList.h"
 
+#include "src/th1fmorph.cc"
+
 using std::cout;
 using std::endl;
+using std::vector;
+using std::cin;
 
 //***************************************************************************//
-// Global Variables (to be changed by user in main())
+// Global Variables (to be changed by user in main()?)
 //  o char*[] leps - contains the lepton combinations we care about in the
 //                   final state
 //  o char*[] procs - contains the regular expressions separating processes
@@ -62,6 +66,7 @@ using std::endl;
 //                        to leps
 //  o char*[] yieldLaTeX - The LaTeX to use for each procs[i] name in the 
 //                         yields table
+//  o TString outfileName - What title to give the MassFit-formatted output
 //  o double[][] eCounts - Keeps track of event yields for each process-
 //                         final-state pair, including data
 //                         [leps.size()][procs.size()+1]
@@ -70,27 +75,35 @@ using std::endl;
 //***************************************************************************//
 const char* leps[5]  = { "E", "EE", "EM", "MM", "M" };
 const char* procs[6] = { "DYJets", "WW", "[^T]W[1234]?Jets", "QCD", "SingleTbar", "TTW?Jets" };
-const char* procReplace[6] = { "DrellYan", "Diboson", "WJets", "QCD", "SingleTop", "TTbar_1p5" };
+const char* procReplace[6] = { "DrellYan", "Diboson", "WJets", "QCD", "SingleTop", "TTbar" };
 const char* dataprocs[5] = { "SingleElectron2012A", "DoubleElectron2012A", 
                              "MuEG2012A", "DoubleMu2012A", "SingleMu2012A" };
 const char* yieldLaTeX[6] = { "Drell-Yan", "Diboson", "W+Jets", "QCD", "Single-top", 
                               "$t\\bar{t}$" };
-const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" }
+const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" };
+const char* signalNames[1] = { "TTbar" };
+const TString outfileName("2012_combined_EACMLB.root");
 
 /////////////////////////////////////////////////////
 //                      Utils                      //
 /////////////////////////////////////////////////////
 #define GETARRSIZE(arr) (sizeof((arr))/sizeof((arr[0])))
 
-const int lepsSize        = GETARRSIZE(leps);
-const int procsSize       = GETARRSIZE(procs);
-const int procReplaceSize = GETARRSIZE(procReplace);
-const int dataprocsSize   = GETARRSIZE(dataprocs);
-const int yieldLaTeXSize  = GETARRSIZE(yieldLaTeX);
-const int lepsLaTeXSize   = GETARRSIZE(lepsLaTeX);
+const int lepsSize          = GETARRSIZE(leps);
+const int procsSize         = GETARRSIZE(procs);
+const int procReplaceSize   = GETARRSIZE(procReplace);
+const int dataprocsSize     = GETARRSIZE(dataprocs);
+const int yieldLaTeXSize    = GETARRSIZE(yieldLaTeX);
+const int lepsLaTeXSize     = GETARRSIZE(lepsLaTeX);
+const int signalNamesLength = GETARRSIZE(signalNames);
 
 double eCounts[lepsSize][procsSize+1];
 double eErrors[lepsSize][procsSize+1];
+
+double nominalWidth = 1.5;
+vector<std::pair<double, TString>> moreFiles;
+bool interpolate = true;
+int interpolations = 0;
 
 //Returns true if the arrays are sized properly
 bool validateArrays() {
@@ -184,7 +197,7 @@ TString GetLatexRatio(int ind) {
 //       Formatting output histogram names         //
 /////////////////////////////////////////////////////
 
-TString formatName(const char* histoName) {
+TString formatName(const char* histoName, double signalWidth) {
     TObjArray *nameParts = (TObjArray*) TString(histoName).ReplaceAll("_mlbwa_",'#').Tokenize(TString("#"));
 
     cout<<nameParts->At(0)->GetName()<<" "<<nameParts->At(1)->GetName()<<endl;
@@ -192,6 +205,7 @@ TString formatName(const char* histoName) {
     TObjArray *procPart = (TObjArray*) TString(nameParts->At(0)->GetName()).Tokenize("_");
     TObjArray *histPart = (TObjArray*) TString(nameParts->At(1)->GetName()).Tokenize("_");
 
+    // obtain useful TStrings
     TString proces = TString(procPart->At(1)->GetName());
     TString lepton = TString(histPart->At(0)->GetName());
     TString delmtr = TString("_");
@@ -205,6 +219,17 @@ TString formatName(const char* histoName) {
             cout<<" -- match found, "<<procs[pInd]<<endl;
             proces = procReplace[pInd];
             cout<<" -- procs now = "<<proces<<endl;
+
+            // loop through the signal names and format with signalWidth if
+            // there's a match (i.e., mlbwa__TTbar_7.5_E)
+            for(int sigCheck=0; sigCheck<signalNamesLength; sigCheck++) {
+              if(proces=signalNames[sigCheck]) {
+                cout<<" --- procs is a signal process"<<endl;
+                proces += delmtr+signalWidth;
+                cout<<" --- procs now = "<<proces<<endl;
+                break;
+              }
+            }
             break;
         } else {
             cout<<" -- not a match: "<<procs[pInd]<<" and "<<proces<<endl;
@@ -226,7 +251,7 @@ TString formatName(const char* histoName) {
  ***********************************/
 void getYields(const char* argv[]) { 
   //open mlbwidth output file
-  TFile *f = new TFile(argv[1]);
+  TFile *f = new TFile(argv[2]);
   f->cd();
 
   //very inefficient, but for now it works
@@ -333,7 +358,7 @@ void getYields(const char* argv[]) {
  ***********************************/
 void getKS(const char* argv[]) {
   //open the input TFile
-  TFile *f = new TFile(argv[1]);
+  TFile *f = new TFile(argv[2]);
   f->cd();
 
   //get the filesystem information from the file
@@ -376,10 +401,10 @@ void getKS(const char* argv[]) {
  *  Structure-wise: can be implemented into class easily.
  ***********************************/
 void createMFOutfile(const char* argv[]) {
-  TFile *f = new TFile(argv[1]);
+  TFile *f = new TFile(argv[2]);
 
   //create the output file we'd like to write histograms to
-  TFile *output = new TFile("2012_combined_EACMLB.root", "RECREATE");
+  TFile *output = new TFile(outfileName, "RECREATE");
   
   //get the filesystem information from the file
   f->cd();
@@ -403,7 +428,7 @@ void createMFOutfile(const char* argv[]) {
       if(TString(alokHistos->At(ihisto)->GetName()).Contains("Graph_")) continue; 
 
       // clone the histogram, give it a new name
-      TString cloneName = formatName(alokHistos->At(ihisto)->GetName());
+      TString cloneName = formatName(alokHistos->At(ihisto)->GetName(),nominalWidth);
       TH1F *thisto = (TH1F*) cDir->Get(alokHistos->At(ihisto)->GetName());
       TH1F *tclone = (TH1F*) thisto->Clone(cloneName);
 
@@ -440,15 +465,95 @@ void createMFOutfile(const char* argv[]) {
     }
   }
 
+  // if we want to interpolate, start making more histograms
+  if(interpolate) {
+    std::pair<double,TString> maxPair = *moreFiles.begin();
+    maxWidth = maxPair.first;
+
+    // check that it makes sense to interpolate with our settings
+    if(maxWidth <= nominalWidth) {
+      cout<<"\n\nERROR: Max width is less than or equal to the nominal width! Exiting."<<endl;
+      exit(EXIT_FAILURE);
+    }
+
+    // open the input file and loop through the relevant directories
+    TFile *maxFile = new TFile(maxPair.second);
+    for(int i=0; i<lepsSize; i++) {
+      // change directory and get the name of the folder we want to access
+      maxFile->cd();
+      char a[128];
+      sprintf(a, "mlbwa_%s_Mlb", leps[i]);
+      TDirectory *tDir = (TDirectory*) maxFile->Get(a);
+      TList *alok = tDir->GetListOfKeys();
+
+      // get the maxWidth histogram in this folder, clone and rename it
+      TString maxHName = alok->First()->GetName();
+      TString maxCloneName = formatName(maxHName, maxWidth);
+      TH1F *maxHisto = (TH1F*) tDir->Get(maxHName);
+      TH1F *maxClone = (TH1F*) thisto->Clone(maxCloneName);
+
+      // write this max histogram to the outfile
+      output->cd();
+      maxClone->Write();
+
+      // get the corresponding nominal histogram from the outfile
+      TH1F *nomHisto = (TH1F*) output->Get(formatName(maxHName,nominalWidth));
+
+      // for each interpolation, create a morphed histogram and write to outfile
+      for(var i = interpolations; i>0; i--) {
+        double tWidth = nominalWidth + i*(maxWidth - nominalWidth)/(interpolations+1);
+        TString interpName = cloneName(maxHName, tWidth);
+        TH1F *interpHisto = (TH1F*) th1fmorph(interpName, interpName,nomHisto,maxClone,
+                                               nominalWidth,maxWidth,tWidth,1.0,0);
+        interpHisto->Write();
+      }
+    }
+
+    maxFile->cd();
+    maxFile->Close();
+  }
+
   output->cd();
   output->Close();
 }
 
+
+
 #ifndef __CINT__
 int main(int argc, const char* argv[]) {
+  if(argc>3) {
+    char yorn;
+    cout<<"Detected more than one width-input file pair. Interpolate? (y or n): "
+    cin >> yorn;
 
-  cout<<"Analyzing the output: "<<argv[1]<<"\n\n"<<endl;
- 
+    if(yorn = 'y') interpolate = true;
+    else interpolate = false;
+
+    cout<<"Setting interpolation to "<<interpolate<<endl;
+    if(interpolate) { 
+      cout<<"NOTE: Interpolation args have format <width1> <file1> "
+          <<"<width2> <file2> <num of interpolations>"<<endl;
+      if(argc<6) { 
+        cout<<" - you did not format your arguments correctly, exiting..."<<endl;
+        exit(EXIT_FAILURE);
+      }
+
+      interpolations = TString(argv[5]).Atof();
+    }
+
+    cout<<"Adding in files:"<<endl;
+    for(int i=3; i+1<argc; i+=2) {
+      cout<<" - width "<<argv[i]<<" and location "<<argv[i+1]<<endl;
+      std::pair<double, TString> tpair(TString(argv[i]).Atof(), TString(argv[i+1]));
+      moreFiles.push_back(tpair); 
+    }
+
+    cout<<"\n"<<endl;
+  }
+
+  cout<<"Analyzing the output: "<<argv[2]<<"width nominal width "<<argv[1]<<"\n\n"<<endl;
+  nominalWidth = TString(argv[1]).Atof();
+
   if(!validateArrays()) {
     cout<<"Arrays not formatted properly. Please check your "
         <<"input and recompile."<<endl;
