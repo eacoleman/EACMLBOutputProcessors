@@ -101,7 +101,7 @@ double eCounts[lepsSize][procsSize+1];
 double eErrors[lepsSize][procsSize+1];
 
 double nominalWidth = 1.5;
-vector<std::pair<double, TString>> moreFiles;
+vector<std::pair<double, TString> > moreFiles;
 bool interpolate = true;
 int interpolations = 0;
 
@@ -225,7 +225,9 @@ TString formatName(const char* histoName, double signalWidth) {
             for(int sigCheck=0; sigCheck<signalNamesLength; sigCheck++) {
               if(proces=signalNames[sigCheck]) {
                 cout<<" --- procs is a signal process"<<endl;
-                proces += delmtr+signalWidth;
+                char* wid[32];
+                sprintf(wid, "%.3f",signalWidth);
+                proces += delmtr+TString(wid);
                 cout<<" --- procs now = "<<proces<<endl;
                 break;
               }
@@ -468,7 +470,7 @@ void createMFOutfile(const char* argv[]) {
   // if we want to interpolate, start making more histograms
   if(interpolate) {
     std::pair<double,TString> maxPair = *moreFiles.begin();
-    maxWidth = maxPair.first;
+    double maxWidth = maxPair.first;
 
     // check that it makes sense to interpolate with our settings
     if(maxWidth <= nominalWidth) {
@@ -490,7 +492,7 @@ void createMFOutfile(const char* argv[]) {
       TString maxHName = alok->First()->GetName();
       TString maxCloneName = formatName(maxHName, maxWidth);
       TH1F *maxHisto = (TH1F*) tDir->Get(maxHName);
-      TH1F *maxClone = (TH1F*) thisto->Clone(maxCloneName);
+      TH1F *maxClone = (TH1F*) maxHisto->Clone(maxCloneName);
 
       // write this max histogram to the outfile
       output->cd();
@@ -500,9 +502,9 @@ void createMFOutfile(const char* argv[]) {
       TH1F *nomHisto = (TH1F*) output->Get(formatName(maxHName,nominalWidth));
 
       // for each interpolation, create a morphed histogram and write to outfile
-      for(var i = interpolations; i>0; i--) {
+      for(int i=interpolations; i>0; i--) {
         double tWidth = nominalWidth + i*(maxWidth - nominalWidth)/(interpolations+1);
-        TString interpName = cloneName(maxHName, tWidth);
+        TString interpName = formatName(maxHName, tWidth);
         TH1F *interpHisto = (TH1F*) th1fmorph(interpName, interpName,nomHisto,maxClone,
                                                nominalWidth,maxWidth,tWidth,1.0,0);
         interpHisto->Write();
@@ -523,7 +525,7 @@ void createMFOutfile(const char* argv[]) {
 int main(int argc, const char* argv[]) {
   if(argc>3) {
     char yorn;
-    cout<<"Detected more than one width-input file pair. Interpolate? (y or n): "
+    cout<<"Detected more than one width-input file pair. Interpolate? (y or n): ";
     cin >> yorn;
 
     if(yorn = 'y') interpolate = true;
