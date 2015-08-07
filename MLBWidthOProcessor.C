@@ -468,8 +468,16 @@ void createMFOutfile(const char* argv[]) {
     }
   }
 
+  f->Close();
+  output->cd();
+  output->Close();
+
   // if we want to interpolate, start making more histograms
   if(interpolate) {
+    TFile *output2 = new TFile(outfileName, "UPDATE");
+    output2->cd();
+    cout<<"\n\n\n\n\n\n"<<output2<<"\n\n\n\n\n\n\n"<<endl;
+
     std::pair<double,TString> maxPair = *moreFiles.begin();
     double maxWidth = maxPair.first;
 
@@ -496,29 +504,32 @@ void createMFOutfile(const char* argv[]) {
       TH1F *maxClone = (TH1F*) maxHisto->Clone(maxCloneName);
 
       // write this max histogram to the outfile
-      output->cd();
+      output2->cd();
       maxClone->Write();
 
       // get the corresponding nominal histogram from the outfile
-      TH1F *nomHisto = (TH1F*) output->Get(formatName(maxHName,nominalWidth));
-      cout<<"--------- nomHisto is "<<nomHisto<<" and maxClone is "<<maxClone<<endl;
+      TH1F *nomHisto = (TH1F*) output2->Get(formatName(maxHName,nominalWidth));
+
+      TCanvas *c = new TCanvas("");
+      nomHisto->Draw();
+      c->SaveAs(formatName(maxHName,nominalWidth)+TString(".pdf"));
+
 
       // for each interpolation, create a morphed histogram and write to outfile
       for(int i=interpolations; i>0; i--) {
         double tWidth = nominalWidth + i*(maxWidth - nominalWidth)/(interpolations+1);
         TString interpName = formatName(maxHName, tWidth);
-        TH1F *interpHisto = (TH1F*) th1fmorph(interpName, interpName,nomHisto,maxClone,
-                                               nominalWidth,maxWidth,tWidth,1.0,0);
+        TH1F *interpHisto = (TH1F*) th1fmorph(interpName, interpName,nomHisto,maxHisto,
+                                               nominalWidth,maxWidth,tWidth,nomHisto->Integral(),1);
         interpHisto->Write();
       }
     }
 
     maxFile->cd();
     maxFile->Close();
+    output2->cd();
+    output2->Close();
   }
-
-  output->cd();
-  output->Close();
 }
 
 
