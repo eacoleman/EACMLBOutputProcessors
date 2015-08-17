@@ -340,8 +340,8 @@ TStyle* MassFit::setTDRStyle() {
 }
 
 void MassFit::calib(char fn[100],char tag[20]){
-    float massPoints[1] = { 1 };// { 169.5, 171.5, 172.5, 173.5, 175.5};
-    //float fitMass = 172.885;//174.03;//172.88;//;173.231;
+    float massPoints[5] = { 1.5, 3.0, 4.5, 6.0, 7.5 };// { 169.5, 171.5, 172.5, 173.5, 175.5};
+//    float fitMass = 4.5;//172.885;//174.03;//172.88;//;173.231;
     bool reduced = true;
     float fitUnc = 0.16;//0.596;
 
@@ -381,14 +381,14 @@ void MassFit::calib(char fn[100],char tag[20]){
     TFile* theFile = new TFile (fn) ;
     int points = 0,minP,maxP;
     float minTMass = 0, maxTMass = 0;
-    for (int i = 0;i<1;++i) {
+    for (int i = 0;i<5;++i) {
         float mass = massPoints[i];
-        sprintf(hname,"meanMass_%g", mass);
+        sprintf(hname,"meanMass_%.2f", mass);
         TH1F*   toy_mean  = (TH1F*) gDirectory->Get(hname);
         cout << hname << endl;
 
-//        if (toy_mean == 0) continue;
-//        if (reduced && (mass<166||mass>180)) continue;
+        if (toy_mean == 0) continue;
+        if (reduced && (mass<0.5||mass>8.5)) continue;
 
         ++points;
         if (minTMass==0.) {minTMass = mass; minP= i;}
@@ -404,29 +404,34 @@ void MassFit::calib(char fn[100],char tag[20]){
     for (int i = minP;i<=maxP;++i,++pts) {
         float mass = massPoints[i];
         cout<<"Mass is "<<mass<<endl;
-        sprintf(hname,"meanMass_%g", mass);
+        sprintf(hname,"meanMass_%.2f", mass);
         TH1F* toy_mean  = (TH1F*) gDirectory->Get(hname);
         toy_mean->Fit("gaus","Q");
 
         cout<<"410"<<endl;
-        sprintf(hname,"biasMass_%g", mass);
+        sprintf(hname,"biasMass_%.2f", mass);
         TH1F* toy_bias= (TH1F*) gDirectory->Get(hname) ;
-        sprintf(hname,"errMass_%g", mass);
+        sprintf(hname,"errMass_%.2f", mass);
         TH1F* toy_error= (TH1F*) gDirectory->Get(hname) ;
-        sprintf(hname,"pullMass_%g", mass);
+        sprintf(hname,"pullMass_%.2f", mass);
         TH1F* toy_pull= (TH1F*) gDirectory->Get(hname) ;
 
         cout<<"419"<<endl;
         toy_bias->Fit("gaus","Q");
         toy_pull->Rebin(5);
         toy_pull->Fit("gaus","Q");
+        cout<<"Toy mean is "<<toy_mean->GetFunction("gaus")->GetParameter(1)<<endl;
+        cout<<"Toy bias is "<<toy_bias->GetFunction("gaus")->GetParameter(1)<<endl;
+        cout<<"Toy pull is "<<toy_pull->GetFunction("gaus")->GetParameter(1)<<endl;
 
+        cout<<"424"<<endl;
         massV(pts)=mass;
         meanV(pts)=toy_mean->GetFunction("gaus")->GetParameter(1);
         biasV(pts)=toy_bias->GetFunction("gaus")->GetParameter(1);
         pullV(pts)=toy_pull->GetFunction("gaus")->GetParameter(1);
         pullWV(pts)=toy_pull->GetFunction("gaus")->GetParameter(2);
         massErrV(pts)=0.;
+        cout<<"431"<<endl;
         meanErrV(pts)=toy_bias->GetFunction("gaus")->GetParameter(2)/sqrt(1);
         biasErrV(pts)=toy_bias->GetFunction("gaus")->GetParameter(2)/sqrt(1);
         pullErrV(pts)=toy_pull->GetFunction("gaus")->GetParError(1)/sqrt(1);
@@ -540,24 +545,24 @@ void MassFit::calib(char fn[100],char tag[20]){
     gStyle->SetOptStat(0);
     gStyle->SetOptFit(kTRUE);
 
-    cout << "Properties at 172.5:\n";
-    TH1F*   toy_err  = (TH1F*) gDirectory->Get("errMass_172.5") ;
+    cout << "Properties at 4.5:\n";
+    TH1F*   toy_err  = (TH1F*) gDirectory->Get("errMass4.5") ;
     cout << "Toy err is "<<toy_err<<endl;
     toy_err->GetXaxis()->SetTitle("Uncertainty [GeV]");
     toy_err->GetXaxis()->SetNdivisions(505);
     toy_err->GetYaxis()->SetTitleOffset(1.4);
     toy_err->Draw();
     CMS_lumi( c_min, iPeriod, 0 );
-    sprintf(hname,"errMass_172_%s.pdf", tag);
+    sprintf(hname,"errMass_4.5_%s.pdf", tag);
     c_min->Print(hname);
-    sprintf(hname,"errMass_172_%s.C", tag);
+    sprintf(hname,"errMass_4.5_%s.C", tag);
     c_min->Print(hname);
-    sprintf(hname,"errMass_172_%s.png", tag);
+    sprintf(hname,"errMass_4.5_%s.png", tag);
     c_min->Print(hname);
     cout << "Mean uncertainty "<<toy_err->GetMean()<<endl;
 
     gStyle->SetOptFit(1111);
-    TH1F*   toy_mean  = (TH1F*) gDirectory->Get("meanMass_172.5") ;
+    TH1F*   toy_mean  = (TH1F*) gDirectory->Get("meanMass_4.5") ;
     toy_mean->Fit("gaus","Q");
     toy_mean->GetXaxis()->SetTitle("Mass [GeV]");
     toy_mean->GetYaxis()->SetTitleOffset(1.2);
@@ -565,26 +570,26 @@ void MassFit::calib(char fn[100],char tag[20]){
 
     toy_mean->Draw();
     CMS_lumi( c_min, iPeriod, 0 );
-    sprintf(hname,"meanMass_172_%s.pdf", tag);
+    sprintf(hname,"meanMass_4.5_%s.pdf", tag);
     c_min->Print(hname);
-    sprintf(hname,"meanMass_172_%s.C", tag);
+    sprintf(hname,"meanMass_4.5_%s.C", tag);
     c_min->Print(hname);
-    sprintf(hname,"meanMass_172_%s.png", tag);
+    sprintf(hname,"meanMass_4.5_%s.png", tag);
     c_min->Print(hname);
 
     gStyle->SetOptFit(1111);
-    TH1F*   toy_pull  = (TH1F*) gDirectory->Get("pullMass_172.5") ;
+    TH1F*   toy_pull  = (TH1F*) gDirectory->Get("pullMass_4.5") ;
     toy_pull->Fit("gaus","Q");
     toy_pull->GetXaxis()->SetTitle("Pull");
     toy_pull->GetYaxis()->SetTitle("Events/bin");
     toy_pull->GetYaxis()->SetTitleOffset(1.4);
     toy_pull->Draw();
     CMS_lumi( c_min, iPeriod, 0 );
-    sprintf(hname,"pullMass_172_%s.pdf", tag);
+    sprintf(hname,"pullMass_4.5_%s.pdf", tag);
     c_min->Print(hname);
-    sprintf(hname,"pullMass_172_%s.C", tag);
+    sprintf(hname,"pullMass_4.5_%s.C", tag);
     c_min->Print(hname);
-    sprintf(hname,"pullMass_172_%s.png", tag);
+    sprintf(hname,"pullMass_4.5_%s.png", tag);
     c_min->Print(hname);
 
     cout << "Inversion\n";
@@ -599,8 +604,8 @@ void MassFit::calib(char fn[100],char tag[20]){
     float err = sqrt(ae*ae*((fitMass-b)/(a*a))*((fitMass-b)/(a*a)) + be*be/(a*a));
     cout << "calib err: " << err<<endl;
 
-    cout << "Pull at 172.5: "<< pullWFit->Eval(172.5)<<endl;
-    cout << "calbrated stat unc: "<< pullWFit->Eval(172.5)*fitUnc<<endl;
+    cout << "Pull at 4.5: "<< pullWFit->Eval(4.5)<<endl;
+    cout << "calbrated stat unc: "<< pullWFit->Eval(4.5)*fitUnc<<endl;
 
     theFile->Close();
 }
@@ -675,7 +680,7 @@ void MassFit::setup()
     // initialize some helper variables
     nFitFailed = 0;
     nFitTried = 0;
-    hFitFailed = new TH1F("hFitFailed","hFitFailed", 11, 159.5, 191.5);
+    hFitFailed = new TH1F("hFitFailed","hFitFailed", 11, 0, 9);
     hFitFailedDiff = new TH1F("hFitFailedDiff","hFitFailedDiff", 60, -30., 30.);
     fittedTemplate = -1;
 
@@ -733,7 +738,11 @@ void MassFit::setup()
     templ_rms    = new TH1F("trms"   ,"RMS of the templates"   ,50, 150., 200.);
 
     // define template masses
-    mcSignalTemplMass.push_back(1);
+    mcSignalTemplMass.push_back(1.50);
+    mcSignalTemplMass.push_back(3.00);
+    mcSignalTemplMass.push_back(4.50);
+    mcSignalTemplMass.push_back(6.00);
+    mcSignalTemplMass.push_back(7.50);
 
     minTemplate = 0;
     maxTemplate = mcSignalTemplMass.size();
@@ -749,8 +758,8 @@ void MassFit::setup()
         // loop through the top masses we want to check
         for (unsigned int imass = 0; imass <  mcSignalTemplMass.size(); ++imass) {
             // get the histogram for the interaction and mass we want
-            sprintf(hname, "mlbwa__TTbar_%g_%s",mcSignalTemplMass[imass], type[itype]);
-            sprintf(tag, "%s%g", type[itype], mcSignalTemplMass[imass]);
+            sprintf(hname, "mlbwa__TTbar_%.2f_%s",mcSignalTemplMass[imass], type[itype]);
+            sprintf(tag, "%s%.2f", type[itype], mcSignalTemplMass[imass]);
             if (debug) cout << "Signal template " << hname << " "<< tag << endl;
             if (debug) printf("itype %d imass %d \n", itype, imass);
             TH1F* histo = (TH1F*) gDirectory->Get(hname);
@@ -791,8 +800,8 @@ void MassFit::setup()
                     sprintf(tag,"%s_pdf%i",type[itype],i);
                     sprintf(hname,"%s_%s_pdf%i", histoName,type[itype],i);
                 } else {
-                    sprintf(tag,"%s%g",type[itype],mass);
-                    sprintf(hname, "mlbwa__TTbar_%g_%s",mass, type[itype]);
+                    sprintf(tag,"%s%.2f",type[itype],mass);
+                    sprintf(hname, "mlbwa__TTbar_%.2f_%s",mass, type[itype]);
                 }
 
                 // get the histogram and store in mcSignalHistos_gen
@@ -921,32 +930,32 @@ void MassFit::setup()
         for (unsigned int i = 0; i!=mcSignalTemplMass.size();++i) {
             float mass = mcSignalTemplMass[i];
             if (debug) cout << "Build "  << type[itype] << " pdf for " <<mass<<endl;
-            sprintf(tag,"%s%g",type[itype],mass);
+            sprintf(tag,"%s%.2f",type[itype],mass);
 
 #ifdef GAUSS
-            sprintf(hname,"Gaussian::signal%s%g(mass,%g,20)",type[itype],mass,mass);
+            sprintf(hname,"Gaussian::signal%s%.2f(mass,%.2f,20)",type[itype],mass,mass);
             w->factory(hname);
 #else
-            sprintf(tag,"%s%g",type[itype],mass);
-            sprintf(hname,"histo_sgn%s%g",type[itype],mass);
+            sprintf(tag,"%s%.2f",type[itype],mass);
+            sprintf(hname,"histo_sgn%s%.2f",type[itype],mass);
             if (debug) cout << hname<< " " << tag<<endl;
             w->import( *(new RooDataHist(hname, hname, *topMass, mcSignalTemplHistosScaled[tag]) ));
-            sprintf(hname,"HistPdf::signal%s%g(mass,histo_sgn%s%g)",type[itype],mass,type[itype],mass);
+            sprintf(hname,"HistPdf::signal%s%.2f(mass,histo_sgn%s%.2f)",type[itype],mass,type[itype],mass);
             if (debug) cout << hname<<endl;
             w->factory(hname);
             if (systematics && !systematicsPDF) {
-                sprintf(hname,"histo_sgn_gen%s%g",type[itype],mass);
+                sprintf(hname,"histo_sgn_gen%s%.2f",type[itype],mass);
                 w->import( *(new RooDataHist(hname, hname, *topMass, mcSignalTemplHistosScaled_gen[tag]) ));
-                sprintf(hname,"HistPdf::signal_gen%s%g(mass,histo_sgn_gen%s%g)",type[itype],mass,type[itype],mass);
+                sprintf(hname,"HistPdf::signal_gen%s%.2f(mass,histo_sgn_gen%s%.2f)",type[itype],mass,type[itype],mass);
                 w->factory(hname);
             }
 
 #endif
             if (useRatio) {
-                sprintf(hname,"SUM::model%s%g( ratio%s%g[0,1]*signal%s%g, background%s )",
+                sprintf(hname,"SUM::model%s%.2f( ratio%s%.2f[0,1]*signal%s%.2f, background%s )",
                         type[itype], mass, type[itype], mass, type[itype], mass, type[itype]);
             } else {
-                sprintf(hname,"SUM::model%s%g( Nsig%s%g[0,1000]*signal%s%g, nbrBackgroundEvents%s*background%s )",
+                sprintf(hname,"SUM::model%s%.2f( Nsig%s%.2f[0,1000]*signal%s%.2f, nbrBackgroundEvents%s*background%s )",
                         type[itype], mass, type[itype], mass, type[itype], mass, type[itype], type[itype]);
             }
             if (debug) cout << hname<<endl;
@@ -971,9 +980,9 @@ void MassFit::setup()
     for (unsigned int i = 0; i!=mcSignalTemplMass.size();++i) {
         float mass = mcSignalTemplMass[i];
         if (debug) cout << "Build simultaneous pdf for " <<mass<<endl;
-        sprintf(name2,"SIMUL::model%g(sample",mass);
+        sprintf(name2,"SIMUL::model%.2f(sample",mass);
         for (int j =0; j<maxType;++j) {
-            sprintf(name,"%s,%s=model%s%g", name2, type[j], type[j], mass);
+            sprintf(name,"%s,%s=model%s%.2f", name2, type[j], type[j], mass);
             sprintf(name2,"%s", name);
         }
         sprintf(name,"%s)",name2);
@@ -1020,7 +1029,7 @@ void MassFit::assembleDatasets()
 TH1F* MassFit::templateHisto(const char* typeC, int i)
 {
     char tag[50];
-    sprintf(tag,"%s%g",typeC,mcSignalTemplMass[i]);
+    sprintf(tag,"%s%.2f",typeC,mcSignalTemplMass[i]);
     cout << "Template mass "<< tag<<endl;
     return mcSignalTemplHistosScaled[tag];
 }
@@ -1046,7 +1055,7 @@ double MassFit::fitPoint(int i)
 
     cout<<" - okay we've done those checks, now for some manipulation"<<endl;
     char hname[50];
-    sprintf(hname,"model%g", mcSignalTemplMass[i]);
+    sprintf(hname,"model%.2f", mcSignalTemplMass[i]);
     pdffit = w->pdf(hname) ;
     pdffit->Print();
 
@@ -1054,8 +1063,8 @@ double MassFit::fitPoint(int i)
         cout<<" - we're in the first if statement now"<<endl;
         char tag[50];
         for (int itype = 0;itype!=maxType;++itype) {
-            sprintf(tag,"%s%g",type[itype],mcSignalTemplMass[i]);
-            sprintf(hname,"ratio%s%g", type[itype], mcSignalTemplMass[i]);
+            sprintf(tag,"%s%.2f",type[itype],mcSignalTemplMass[i]);
+            sprintf(hname,"ratio%s%.2f", type[itype], mcSignalTemplMass[i]);
             w->var(hname)->setVal(mcSignalTemplHistosScaled[tag]->Integral()/
                     (mcSignalTemplHistosScaled[tag]->Integral()+mcTotalBackgroundHistoScaled[type[itype]]->Integral()));
             w->var(hname)->setConstant(1);
@@ -1063,7 +1072,7 @@ double MassFit::fitPoint(int i)
     } else if (useRatio && fixBckg==1) {
         cout<<" - we're in the second if statement now"<<endl;
         for (int itype = 0;itype!=maxType;++itype) {
-            sprintf(hname,"ratio%s%g", type[itype], mcSignalTemplMass[i]);
+            sprintf(hname,"ratio%s%.2f", type[itype], mcSignalTemplMass[i]);
             w->var(hname)->setVal(1.0);
             w->var(hname)->setConstant(1);
         }
@@ -1213,8 +1222,8 @@ pair<double,double> MassFit::findMin(bool all, int pointsToUse) {
     gr->GetYaxis()->SetTitleOffset(1.25);
 
     Double_t a = gr->GetFunction("pol2")->GetParameter(2);
-    fitMass = gr->GetFunction("pol2")->GetMinimumX(0,250);
-    cout << "Min mass "<< gr->GetFunction("pol2")->GetMinimumX(0,250)<<" +/- "<< 1/sqrt(2*a)<<endl;
+    fitMass = gr->GetFunction("pol2")->GetMinimumX(0,9);
+    cout << "Min mass "<< gr->GetFunction("pol2")->GetMinimumX(0,9)<<" +/- "<< 1/sqrt(2*a)<<endl;
     if (failures) cout << "Fits failed: " <<failures <<endl;
 
     for (int i = minTemplate; i!=maxTemplate;++i) {
@@ -1226,7 +1235,7 @@ pair<double,double> MassFit::findMin(bool all, int pointsToUse) {
 
     if (a<0.) return pair<double,double>(0.,0.);
 
-    return pair<double,double>(gr->GetFunction("pol2")->GetMinimumX(0,250),1/sqrt(2*a));
+    return pair<double,double>(gr->GetFunction("pol2")->GetMinimumX(0,9),1/sqrt(2*a));
 }
 
 pair<double,double> MassFit::findMinFake(bool all, int pointsToUse) {
@@ -1277,7 +1286,7 @@ pair<double,double> MassFit::findMinFake(bool all, int pointsToUse) {
     gr->GetYaxis()->SetTitleOffset(1.25);
 
     Double_t a = gr->GetFunction("pol2")->GetParameter(2);
-    cout << "Min mass "<< gr->GetFunction("pol2")->GetMinimumX(0,250)<<" +/- "<< 1/sqrt(2*a)<<endl;
+    cout << "Min mass "<< gr->GetFunction("pol2")->GetMinimumX(0,9)<<" +/- "<< 1/sqrt(2*a)<<endl;
     if (failures) cout << "Fits failed: " <<failures <<endl;
 
     for (int i = minTemplate; i!=maxTemplate;++i) {
@@ -1289,7 +1298,7 @@ pair<double,double> MassFit::findMinFake(bool all, int pointsToUse) {
 
     if (a<0.) return pair<double,double>(0.,0.);
 
-    return pair<double,double>(gr->GetFunction("pol2")->GetMinimumX(0,250),1/sqrt(2*a));
+    return pair<double,double>(gr->GetFunction("pol2")->GetMinimumX(0,9),1/sqrt(2*a));
 }
 
 void MassFit::printLL(bool toFile, char* name)
@@ -1335,11 +1344,11 @@ void MassFit::do_toys(int n_exp, int templateToUse)
     }
     if (toy_LL!=0) delete toy_LL;
     cout<<"1332"<<endl;
-    float massPoint = 172.5;
+    float massPoint = 4.5;
     if (!systematics || !systematicsPDF) massPoint = mcSignalTemplMass[templateToUse];
 
-    toy_mean   = new TH1F("mean"  ,"Top mass",100, massPoint-2.5, massPoint+2.5);
-    toy_bias   = new TH1F("bias"  ,"Top mass bias",100, -2.5, 2.5);
+    toy_mean   = new TH1F("mean"  ,"Top mass",100, massPoint-3.5, massPoint+3.5);
+    toy_bias   = new TH1F("bias"  ,"Top mass bias",100, -3.5, 3.5);
     toy_error  = new TH1F("error" ,"top mass uncertainty",500, 0.1, 0.2);
     toy_pull   = new TH1F("pull"  ,"pull",100, -5, 5);
     toy_LL     = new TH2F("LL"  ,"LL residuals",9, -0.5, 8.5,200,-100,100);
@@ -1411,7 +1420,7 @@ void MassFit::texEvents(int templateToUse, float lower, float upper)
 
     cout << "Signal";
     for (int itype = 0;itype!=maxType;++itype) {
-        sprintf(tag,"%s%g",type[itype],mcSignalTemplMass[templateToUse]);
+        sprintf(tag,"%s%.2f",type[itype],mcSignalTemplMass[templateToUse]);
         binLow = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(lower);
         binHigh = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(upper);
         printf ("\t& %7.1f", mcSignalTemplHistosScaled[tag]->Integral(binLow, binHigh));
@@ -1430,7 +1439,7 @@ void MassFit::texEvents(int templateToUse, float lower, float upper)
     cout <<"\\hline\n";
     cout << "Total MC";
     for (int itype = 0;itype!=maxType;++itype) {
-        sprintf(tag,"%s%g",type[itype],mcSignalTemplMass[templateToUse]);
+        sprintf(tag,"%s%.2f",type[itype],mcSignalTemplMass[templateToUse]);
         printf ("\t& %7.1f", mcSignalTemplHistosScaled[tag]->Integral(binLow, binHigh) +
                 mcTotalBackgroundHistoScaled[type[itype]]->Integral(binLow, binHigh));
     }
@@ -1465,7 +1474,7 @@ int MassFit::generate_toy(int templateToUse)
         delete datasets[type[itype]];
         if (!fixedSample) {
             cout<<"1462"<<endl;
-            if (!systematics || !systematicsPDF) sprintf(tag,"%s%g",type[itype],mcSignalTemplMass[templateToUse]);
+            if (!systematics || !systematicsPDF) sprintf(tag,"%s%.2f",type[itype],mcSignalTemplMass[templateToUse]);
             else sprintf(tag,"%s_pdf%i",type[itype],templateToUse);
             int binLow = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(lowerMassCut);
             int binHigh = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(upperMassCut);
@@ -1493,7 +1502,7 @@ int MassFit::generate_toy(int templateToUse)
             cout << ", with Poisson mean "<< (float) mcTotalBackgroundHistoScaled[type[itype]]->Integral(binLow, binHigh) << endl;
         } else {
             cout<<"1488"<<endl;
-            sprintf(tag,"%s%g",type[itype],mcSignalTemplMass[0]);
+            sprintf(tag,"%s%.2f",type[itype],mcSignalTemplMass[4]);
             int binLow = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(lowerMassCut);
             int binHigh = mcSignalTemplHistosScaled[tag]->GetXaxis()->FindBin(upperMassCut);
             cout << tag<<endl;
@@ -1527,10 +1536,10 @@ int MassFit::generate_toy(int templateToUse)
 
         cout<<"1517"<<endl;
         if (systematics) {
-            if (!systematicsPDF) sprintf(hname,"signal_gen%s%g", type[itype], mcSignalTemplMass[templateToUse]);
+            if (!systematicsPDF) sprintf(hname,"signal_gen%s%.2f", type[itype], mcSignalTemplMass[templateToUse]);
             else sprintf(hname,"signal_gen%s%i", type[itype], templateToUse);
         } else {
-            sprintf(hname,"signal%s%g", type[itype], mcSignalTemplMass[templateToUse]);
+            sprintf(hname,"signal%s%.2f", type[itype], mcSignalTemplMass[templateToUse]);
         }
         cout << hname<<endl;
         datasets[type[itype]] = w->pdf(hname)->generateBinned(*topMass, generatedSignal[type[itype]])->createHistogram(hname,*topMass);
@@ -1689,15 +1698,15 @@ void MassFit::calibration(int number)
         ey[pts]=toy_mean->GetFunction("gaus")->GetParameter(2)/sqrt(number);
         ++pts;
 
-        sprintf(hname,"meanMass_%g", mcSignalTemplMass[i]);
+        sprintf(hname,"meanMass_%.2f", mcSignalTemplMass[i]);
         toy_mean->Clone(hname)->Write();
-        sprintf(hname,"biasMass_%g", mcSignalTemplMass[i]);
+        sprintf(hname,"biasMass_%.2f", mcSignalTemplMass[i]);
         toy_bias->Clone(hname)->Write();
-        sprintf(hname,"errMass_%g", mcSignalTemplMass[i]);
+        sprintf(hname,"errMass_%.2f", mcSignalTemplMass[i]);
         toy_error->Clone(hname)->Write();
-        sprintf(hname,"pullMass_%g", mcSignalTemplMass[i]);
+        sprintf(hname,"pullMass_%.2f", mcSignalTemplMass[i]);
         toy_pull->Clone(hname)->Write();
-        sprintf(hname,"LL_%g", mcSignalTemplMass[i]);
+        sprintf(hname,"LL_%.2f", mcSignalTemplMass[i]);
         toy_LL->Clone(hname)->Write();
     }
     for (i = min, pts=0;i<=max;++i,++pts)
@@ -1753,11 +1762,11 @@ void MassFit::pdfCalibration(int number)
         ey[pts]=toy_mean->GetFunction("gaus")->GetParameter(2)/sqrt(number);
         ++pts;
 
-        sprintf(hname,"meanMass_%g", mcSignalTemplMass[i]);
+        sprintf(hname,"meanMass_%.2f", mcSignalTemplMass[i]);
         toy_mean->Clone(hname)->Write();
-        sprintf(hname,"errMass_%g", mcSignalTemplMass[i]);
+        sprintf(hname,"errMass_%.2f", mcSignalTemplMass[i]);
         toy_error->Clone(hname)->Write();
-        sprintf(hname,"pullMass_%g", mcSignalTemplMass[i]);
+        sprintf(hname,"pullMass_%.2f", mcSignalTemplMass[i]);
         toy_pull->Clone(hname)->Write();
     }
     for (int i = 0;i<41;++i)
@@ -1812,15 +1821,15 @@ void MassFit::printFit(bool withFit, bool toFile, char* name)
     } else if (withFit) {
 
         for (int itype = 0;itype!=maxType;++itype) {
-            sprintf(hname,"model%s%g", type[itype], mcSignalTemplMass[fittedTemplate]);
+            sprintf(hname,"model%s%.2f", type[itype], mcSignalTemplMass[fittedTemplate]);
             pdffit->plotOn(frames[type[itype]],Components(hname),ProjWData(*sample,*data), LineColor(kBlack)) ;
-            sprintf(hname,"signal%s%g", type[itype],mcSignalTemplMass[fittedTemplate]);
+            sprintf(hname,"signal%s%.2f", type[itype],mcSignalTemplMass[fittedTemplate]);
             pdffit->plotOn(frames[type[itype]],Components(hname),ProjWData(*sample,*data),LineStyle(kDotted), LineColor(kBlue)) ;
             sprintf(hname,"background%s", type[itype]);
             pdffit->plotOn(frames[type[itype]],Components(hname),ProjWData(*sample,*data),LineStyle(kDashed), LineColor(kRed) ) ;
         }
 
-        sprintf(hname,"model%g", mcSignalTemplMass[fittedTemplate]);
+        sprintf(hname,"model%.2f", mcSignalTemplMass[fittedTemplate]);
         pdffit->plotOn(frame4,Components(hname),ProjWData(*sample,*data), LineColor(kBlack)) ;
     }
 
@@ -1894,7 +1903,7 @@ void MassFit::printFit(bool withFit, bool toFile, char* name)
     if (toFile) {
         char name2[200],name3[200];
         if (strlen(name)==0) {
-            if (withFit) sprintf(name2,"%s/fit_result/mass%g_", absolutePath,
+            if (withFit) sprintf(name2,"%s/fit_result/mass%.2f_", absolutePath,
                     mcSignalTemplMass[fittedTemplate]);
             else sprintf(name2,"%s/fit_result/mass_", absolutePath);
             typeTag(name2);
@@ -1923,7 +1932,7 @@ void MassFit::printMassRange()
     cout << "Templates: " <<mcSignalTemplMass.size()<<endl;
     for (vector<float>::iterator i = mcSignalTemplMass.begin(); i!= mcSignalTemplMass.end(); ++i)
         cout << i-mcSignalTemplMass.begin()<<" "<<*i<<endl;
-    cout << "Nominal template (mass=172.5): " << nominalTemplate<<endl;
+    cout << "Nominal template (mass=4.5): " << nominalTemplate<<endl;
 }
 
 void MassFit::cmsprelim()
