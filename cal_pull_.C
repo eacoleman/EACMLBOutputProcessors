@@ -1,8 +1,8 @@
 void cal_pull_()
 {
 //=========Macro generated from canvas: c_min/
-//=========  (Wed Aug 19 10:50:08 2015) by ROOT version6.02/05
-   TCanvas *c_min = new TCanvas("c_min", "",1758,480,600,600);
+//=========  (Wed Aug 19 19:15:07 2015) by ROOT version6.02/05
+   TCanvas *c_min = new TCanvas("c_min", "",1783,505,600,600);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
    c_min->Range(-0.5399999,-1.3,8.46,1.2);
@@ -25,11 +25,11 @@ void cal_pull_()
    6,
    7.5};
    Double_t pullGraph_fy1003[5] = {
-   3.9137,
-   -4.464702,
-   -2.276329,
-   -4.862892,
-   -4.091143};
+   4.123404,
+   -4.802308,
+   -2.51784,
+   -3.816834,
+   -4.737333};
    Double_t pullGraph_fex1003[5] = {
    0,
    0,
@@ -37,11 +37,11 @@ void cal_pull_()
    0,
    0};
    Double_t pullGraph_fey1003[5] = {
-   0.4071351,
-   0.2369756,
-   0.1259816,
-   1.866384,
-   11.05039};
+   0.1899851,
+   0.1848426,
+   0.03235723,
+   0.08417438,
+   1.296981};
    TGraphErrors *gre = new TGraphErrors(5,pullGraph_fx1003,pullGraph_fy1003,pullGraph_fex1003,pullGraph_fey1003);
    gre->SetName("pullGraph");
    gre->SetTitle("Graph");
@@ -84,7 +84,7 @@ void cal_pull_()
    pullFit1004->SetMarkerStyle(20);
    pullFit1004->SetLineColor(2);
    pullFit1004->SetLineWidth(1);
-   pullFit1004->SetChisquare(318.3178);
+   pullFit1004->SetChisquare(1611.841);
    pullFit1004->SetNDF(4);
    pullFit1004->GetXaxis()->SetLabelFont(42);
    pullFit1004->GetXaxis()->SetLabelOffset(0.007);
@@ -98,8 +98,8 @@ void cal_pull_()
    pullFit1004->GetYaxis()->SetTitleSize(0.06);
    pullFit1004->GetYaxis()->SetTitleOffset(1.25);
    pullFit1004->GetYaxis()->SetTitleFont(42);
-   pullFit1004->SetParameter(0,-2.303669);
-   pullFit1004->SetParError(0,0.107124);
+   pullFit1004->SetParameter(0,-2.576359);
+   pullFit1004->SetParError(0,0.0294395);
    pullFit1004->SetParLimits(0,0,0);
    gre->GetListOfFunctions()->Add(pullFit1004);
    gre->Draw("apz");

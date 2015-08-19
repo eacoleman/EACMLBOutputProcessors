@@ -1,8 +1,8 @@
 void cal_pullW_()
 {
 //=========Macro generated from canvas: c_min/
-//=========  (Wed Aug 19 10:50:08 2015) by ROOT version6.02/05
-   TCanvas *c_min = new TCanvas("c_min", "",1758,480,600,600);
+//=========  (Wed Aug 19 19:15:16 2015) by ROOT version6.02/05
+   TCanvas *c_min = new TCanvas("c_min", "",1783,505,600,600);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
    c_min->Range(-0.5399999,0.675,8.46,1.3);
@@ -25,11 +25,11 @@ void cal_pullW_()
    6,
    7.5};
    Double_t pullWGraph_fy1005[5] = {
-   1.396929,
-   0.6866949,
-   0.9163059,
-   1.511742,
-   0.2248922};
+   1.643913,
+   0.9920968,
+   0.9730967,
+   1.245343,
+   0.7292887};
    Double_t pullWGraph_fex1005[5] = {
    0,
    0,
@@ -37,11 +37,11 @@ void cal_pullW_()
    0,
    0};
    Double_t pullWGraph_fey1005[5] = {
-   0.2872676,
-   0.18255,
-   0.1396229,
-   0.8852339,
-   1.605322};
+   0.1021724,
+   0.08932956,
+   0.02462952,
+   0.05297478,
+   0.9320205};
    TGraphErrors *gre = new TGraphErrors(5,pullWGraph_fx1005,pullWGraph_fy1005,pullWGraph_fex1005,pullWGraph_fey1005);
    gre->SetName("pullWGraph");
    gre->SetTitle("Graph");

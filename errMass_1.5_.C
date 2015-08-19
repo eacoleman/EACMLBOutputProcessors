@@ -1,12 +1,12 @@
 void errMass_1.5_()
 {
 //=========Macro generated from canvas: c_min/
-//=========  (Wed Aug 19 10:50:09 2015) by ROOT version6.02/05
-   TCanvas *c_min = new TCanvas("c_min", "",1758,480,600,600);
+//=========  (Wed Aug 19 19:15:34 2015) by ROOT version6.02/05
+   TCanvas *c_min = new TCanvas("c_min", "",1783,505,600,600);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
-   c_min->Range(0.08,-0.1575,0.205,1.155);
+   c_min->Range(0.08,-0.315,0.205,2.31);
    c_min->SetFillColor(0);
    c_min->SetBorderMode(0);
    c_min->SetBorderSize(2);
@@ -21,8 +21,13 @@ void errMass_1.5_()
    
    TH1F *errMass_1.501 = new TH1F("errMass_1.501","top mass uncertainty",500,0.1,0.2);
    errMass_1.501->SetBinContent(480,1);
-   errMass_1.501->SetBinContent(501,99);
-   errMass_1.501->SetEntries(100);
+   errMass_1.501->SetBinContent(482,1);
+   errMass_1.501->SetBinContent(491,1);
+   errMass_1.501->SetBinContent(495,2);
+   errMass_1.501->SetBinContent(497,1);
+   errMass_1.501->SetBinContent(500,1);
+   errMass_1.501->SetBinContent(501,993);
+   errMass_1.501->SetEntries(1000);
    errMass_1.501->SetDirectory(0);
    errMass_1.501->SetStats(0);
    errMass_1.501->SetFillColor(44);

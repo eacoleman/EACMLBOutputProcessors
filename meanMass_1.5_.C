@@ -1,12 +1,12 @@
 void meanMass_1.5_()
 {
 //=========Macro generated from canvas: c_min/
-//=========  (Wed Aug 19 10:50:09 2015) by ROOT version6.02/05
-   TCanvas *c_min = new TCanvas("c_min", "",1758,480,600,600);
+//=========  (Wed Aug 19 19:15:43 2015) by ROOT version6.02/05
+   TCanvas *c_min = new TCanvas("c_min", "",1783,505,600,600);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
-   c_min->Range(-3.4,-2.3625,5.35,17.325);
+   c_min->Range(-3.4,-24.0975,5.35,176.715);
    c_min->SetFillColor(0);
    c_min->SetBorderMode(0);
    c_min->SetBorderSize(2);
@@ -20,25 +20,32 @@ void meanMass_1.5_()
    c_min->SetFrameBorderMode(0);
    
    TH1F *meanMass_1.502 = new TH1F("meanMass_1.502","Top mass",100,-2,5);
-   meanMass_1.502->SetBinContent(29,15);
-   meanMass_1.502->SetBinContent(30,3);
-   meanMass_1.502->SetBinContent(31,4);
-   meanMass_1.502->SetBinContent(32,3);
-   meanMass_1.502->SetBinContent(33,5);
-   meanMass_1.502->SetBinContent(34,4);
-   meanMass_1.502->SetBinContent(35,7);
-   meanMass_1.502->SetBinContent(36,7);
-   meanMass_1.502->SetBinContent(37,4);
-   meanMass_1.502->SetBinContent(38,10);
-   meanMass_1.502->SetBinContent(39,5);
-   meanMass_1.502->SetBinContent(40,4);
-   meanMass_1.502->SetBinContent(41,7);
-   meanMass_1.502->SetBinContent(42,4);
-   meanMass_1.502->SetBinContent(43,7);
-   meanMass_1.502->SetBinContent(44,4);
-   meanMass_1.502->SetBinContent(45,4);
-   meanMass_1.502->SetBinContent(46,3);
-   meanMass_1.502->SetEntries(100);
+   meanMass_1.502->SetBinContent(29,153);
+   meanMass_1.502->SetBinContent(30,35);
+   meanMass_1.502->SetBinContent(31,48);
+   meanMass_1.502->SetBinContent(32,42);
+   meanMass_1.502->SetBinContent(33,43);
+   meanMass_1.502->SetBinContent(34,57);
+   meanMass_1.502->SetBinContent(35,62);
+   meanMass_1.502->SetBinContent(36,55);
+   meanMass_1.502->SetBinContent(37,58);
+   meanMass_1.502->SetBinContent(38,70);
+   meanMass_1.502->SetBinContent(39,60);
+   meanMass_1.502->SetBinContent(40,53);
+   meanMass_1.502->SetBinContent(41,47);
+   meanMass_1.502->SetBinContent(42,51);
+   meanMass_1.502->SetBinContent(43,44);
+   meanMass_1.502->SetBinContent(44,36);
+   meanMass_1.502->SetBinContent(45,26);
+   meanMass_1.502->SetBinContent(46,19);
+   meanMass_1.502->SetBinContent(47,15);
+   meanMass_1.502->SetBinContent(48,13);
+   meanMass_1.502->SetBinContent(49,4);
+   meanMass_1.502->SetBinContent(50,6);
+   meanMass_1.502->SetBinContent(51,1);
+   meanMass_1.502->SetBinContent(52,1);
+   meanMass_1.502->SetBinContent(53,1);
+   meanMass_1.502->SetEntries(1000);
    meanMass_1.502->SetDirectory(0);
    meanMass_1.502->SetStats(0);
    
@@ -48,8 +55,8 @@ void meanMass_1.5_()
    gaus1->SetMarkerStyle(20);
    gaus1->SetLineColor(2);
    gaus1->SetLineWidth(1);
-   gaus1->SetChisquare(15.608);
-   gaus1->SetNDF(15);
+   gaus1->SetChisquare(122.283);
+   gaus1->SetNDF(22);
    gaus1->GetXaxis()->SetLabelFont(42);
    gaus1->GetXaxis()->SetLabelOffset(0.007);
    gaus1->GetXaxis()->SetLabelSize(0.05);
@@ -62,15 +69,15 @@ void meanMass_1.5_()
    gaus1->GetYaxis()->SetTitleSize(0.06);
    gaus1->GetYaxis()->SetTitleOffset(1.25);
    gaus1->GetYaxis()->SetTitleFont(42);
-   gaus1->SetParameter(0,5.339981);
-   gaus1->SetParError(0,0.8965954);
+   gaus1->SetParameter(0,64.59668);
+   gaus1->SetParError(0,2.562077);
    gaus1->SetParLimits(0,0,0);
-   gaus1->SetParameter(1,0.582766);
-   gaus1->SetParError(1,0.1573931);
+   gaus1->SetParameter(1,0.4961544);
+   gaus1->SetParError(1,0.02661852);
    gaus1->SetParLimits(1,0,0);
-   gaus1->SetParameter(2,0.6928592);
-   gaus1->SetParError(2,0.3574273);
-   gaus1->SetParLimits(2,0,3.634773);
+   gaus1->SetParameter(2,0.4238443);
+   gaus1->SetParError(2,0.01665679);
+   gaus1->SetParLimits(2,0,3.858248);
    meanMass_1.502->GetListOfFunctions()->Add(gaus1);
    meanMass_1.502->SetFillColor(44);
    meanMass_1.502->SetLineStyle(0);

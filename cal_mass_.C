@@ -1,11 +1,11 @@
 void cal_mass_()
 {
 //=========Macro generated from canvas: c_min/
-//=========  (Wed Aug 19 10:50:07 2015) by ROOT version6.02/05
-   TCanvas *c_min = new TCanvas("c_min", "",1758,480,250,596);
+//=========  (Wed Aug 19 19:14:57 2015) by ROOT version6.02/05
+   TCanvas *c_min = new TCanvas("c_min", "",1783,505,425,598);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
-   c_min->Range(-0.5399999,-2.697996,8.46,11.16577);
+   c_min->Range(-0.5399999,-1.485333,8.46,10.89244);
    c_min->SetFillColor(0);
    c_min->SetBorderMode(0);
    c_min->SetBorderSize(2);
@@ -25,11 +25,11 @@ void cal_mass_()
    6,
    7.5};
    Double_t massGraph_fy1001[5] = {
-   0.582766,
-   3.824095,
-   4.899967,
-   6.71855,
-   9.090744};
+   0.4961544,
+   3.818905,
+   4.951188,
+   6.749788,
+   9.005304};
    Double_t massGraph_fex1001[5] = {
    0,
    0,
@@ -37,11 +37,11 @@ void cal_mass_()
    0,
    0};
    Double_t massGraph_fey1001[5] = {
-   0.6928592,
-   0.152635,
-   0.1499794,
-   0.2585853,
-   0.04167287};
+   0.4238443,
+   0.1646091,
+   0.1775682,
+   0.2618714,
+   0.003288113};
    TGraphErrors *gre = new TGraphErrors(5,massGraph_fx1001,massGraph_fy1001,massGraph_fex1001,massGraph_fey1001);
    gre->SetName("massGraph");
    gre->SetTitle("Graph");
@@ -49,8 +49,8 @@ void cal_mass_()
    gre->SetMarkerStyle(20);
    
    TH1F *Graph_massGraph1001 = new TH1F("Graph_massGraph1001","Graph",100,0.9,8.1);
-   Graph_massGraph1001->SetMinimum(-1.034344);
-   Graph_massGraph1001->SetMaximum(10.05667);
+   Graph_massGraph1001->SetMinimum(0);
+   Graph_massGraph1001->SetMaximum(9.90222);
    Graph_massGraph1001->SetDirectory(0);
    Graph_massGraph1001->SetStats(0);
    Graph_massGraph1001->SetLineStyle(0);
@@ -84,7 +84,7 @@ void cal_mass_()
    meanFit1002->SetMarkerStyle(20);
    meanFit1002->SetLineColor(2);
    meanFit1002->SetLineWidth(1);
-   meanFit1002->SetChisquare(19.65424);
+   meanFit1002->SetChisquare(17.81005);
    meanFit1002->SetNDF(3);
    meanFit1002->GetXaxis()->SetLabelFont(42);
    meanFit1002->GetXaxis()->SetLabelOffset(0.007);
@@ -98,11 +98,11 @@ void cal_mass_()
    meanFit1002->GetYaxis()->SetTitleSize(0.06);
    meanFit1002->GetYaxis()->SetTitleOffset(1.25);
    meanFit1002->GetYaxis()->SetTitleFont(42);
-   meanFit1002->SetParameter(0,-0.3398171);
-   meanFit1002->SetParError(0,0.2059615);
+   meanFit1002->SetParameter(0,-0.3585265);
+   meanFit1002->SetParError(0,0.2108083);
    meanFit1002->SetParLimits(0,0,0);
-   meanFit1002->SetParameter(1,1.255073);
-   meanFit1002->SetParError(1,0.02903884);
+   meanFit1002->SetParameter(1,1.248503);
+   meanFit1002->SetParError(1,0.02811718);
    meanFit1002->SetParLimits(1,0,0);
    gre->GetListOfFunctions()->Add(meanFit1002);
    gre->Draw("apz");
