@@ -474,9 +474,9 @@ void createMFOutfile(const char* argv[]) {
 
   // if we want to interpolate, start making more histograms
   if(interpolate) {
+    // Have to reopen the outfile because ROOT is odd
     TFile *output2 = new TFile(outfileName, "UPDATE");
     output2->cd();
-    cout<<"\n\n\n\n\n\n"<<output2<<"\n\n\n\n\n\n\n"<<endl;
 
     std::pair<double,TString> maxPair = *moreFiles.begin();
     double maxWidth = maxPair.first;
@@ -529,7 +529,52 @@ void createMFOutfile(const char* argv[]) {
     maxFile->Close();
     output2->cd();
     output2->Close();
+
+    // Otherwise, we want to collect signal histograms of different weights
+  } else {
+    // Have to reopen the outfile because ROOT is odd
+    TFile *output2 = new TFile(outfileName, "UPDATE");
+    output2->cd();
+
+    // Loop through the additional files
+    for(std::vector<std::pair<double, TString> >::const_iterator pf=moreFiles.begin();
+                                                                 pf!=moreFiles.end();
+                                                                 pf++) {
+
+        // This is the current file and width
+        TFile *curFile = new TFile(pf->second, "READ");
+        double curWid  = pf->first;
+
+        // Loop through lepton final states
+        for(int i=0; i<lepsSize; i++) {
+            curFile->cd();
+
+            // Get the desired directory
+            char dirName[128];
+            sprintf(dirName, "mlbwa_%s_Mlb", leps[i]);
+            TDirectory *curDir = (TDirectory*) curFile->Get(dirName);
+
+            // Get the names of the first histogram in the directory
+            //     (we don't want more than one additional signal histo per extra file)
+            // Format it with the usual method
+            TString histName   = TString(curDir->GetListOfKeys()->First()->GetName());
+            TString cloneName  = formatName(histName,curWid);
+            
+            // Get the mlb histo
+            TH1D *curHisto = (TH1D*) curDir->Get(histName)->Clone(cloneName);
+
+            // Write to the outfile
+            output2->cd();
+            curHisto->Write();
+        }
+
+        curFile->Close();
+    }
+
+    output2->cd();
+    output2->Close();
   }
+
 }
 
 
@@ -541,8 +586,8 @@ int main(int argc, const char* argv[]) {
     cout<<"Detected more than one width-input file pair. Interpolate? (y or n): ";
     cin >> yorn;
 
-    if(yorn = 'y') interpolate = true;
-    else interpolate = false;
+    interpolate = false;
+    if(yorn == 'y') interpolate = true;
 
     cout<<"Setting interpolation to "<<interpolate<<endl;
     if(interpolate) { 

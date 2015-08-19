@@ -1,11 +1,11 @@
 void cal_pullW_()
 {
 //=========Macro generated from canvas: c_min/
-//=========  (Wed Aug  5 19:36:43 2015) by ROOT version6.02/05
-   TCanvas *c_min = new TCanvas("c_min", "",1683,405,600,600);
+//=========  (Wed Aug 19 10:50:08 2015) by ROOT version6.02/05
+   TCanvas *c_min = new TCanvas("c_min", "",1758,480,600,600);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
-   c_min->Range(0.66,0.675,2.16,1.3);
+   c_min->Range(-0.5399999,0.675,8.46,1.3);
    c_min->SetFillColor(0);
    c_min->SetBorderMode(0);
    c_min->SetBorderSize(2);
@@ -18,21 +18,37 @@ void cal_pullW_()
    c_min->SetFrameFillStyle(0);
    c_min->SetFrameBorderMode(0);
    
-   Double_t pullWGraph_fx1005[1] = {
-   1};
-   Double_t pullWGraph_fy1005[1] = {
-   0.2058944};
-   Double_t pullWGraph_fex1005[1] = {
+   Double_t pullWGraph_fx1005[5] = {
+   1.5,
+   3,
+   4.5,
+   6,
+   7.5};
+   Double_t pullWGraph_fy1005[5] = {
+   1.396929,
+   0.6866949,
+   0.9163059,
+   1.511742,
+   0.2248922};
+   Double_t pullWGraph_fex1005[5] = {
+   0,
+   0,
+   0,
+   0,
    0};
-   Double_t pullWGraph_fey1005[1] = {
-   1.60056};
-   TGraphErrors *gre = new TGraphErrors(1,pullWGraph_fx1005,pullWGraph_fy1005,pullWGraph_fex1005,pullWGraph_fey1005);
+   Double_t pullWGraph_fey1005[5] = {
+   0.2872676,
+   0.18255,
+   0.1396229,
+   0.8852339,
+   1.605322};
+   TGraphErrors *gre = new TGraphErrors(5,pullWGraph_fx1005,pullWGraph_fy1005,pullWGraph_fex1005,pullWGraph_fey1005);
    gre->SetName("pullWGraph");
    gre->SetTitle("Graph");
    gre->SetFillColor(1);
    gre->SetMarkerStyle(20);
    
-   TH1F *Graph_pullWGraph1005 = new TH1F("Graph_pullWGraph1005","Graph",100,0.9,2.1);
+   TH1F *Graph_pullWGraph1005 = new TH1F("Graph_pullWGraph1005","Graph",100,0.9,8.1);
    Graph_pullWGraph1005->SetMinimum(0.75);
    Graph_pullWGraph1005->SetMaximum(1.25);
    Graph_pullWGraph1005->SetDirectory(0);
@@ -63,7 +79,7 @@ void cal_pullW_()
    
    gre->Draw("apz");
    
-   TF1 *f31006 = new TF1("f3","pol1",-9,11);
+   TF1 *f31006 = new TF1("f3","pol1",-8.5,17.5);
    f31006->SetFillColor(19);
    f31006->SetFillStyle(0);
    f31006->SetMarkerStyle(20);

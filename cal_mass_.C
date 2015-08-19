@@ -1,11 +1,11 @@
 void cal_mass_()
 {
 //=========Macro generated from canvas: c_min/
-//=========  (Wed Aug  5 19:35:34 2015) by ROOT version6.02/05
-   TCanvas *c_min = new TCanvas("c_min", "",1683,405,250,596);
+//=========  (Wed Aug 19 10:50:07 2015) by ROOT version6.02/05
+   TCanvas *c_min = new TCanvas("c_min", "",1758,480,250,596);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
-   c_min->Range(0.66,0.2269096,2.16,0.2269097);
+   c_min->Range(-0.5399999,-2.697996,8.46,11.16577);
    c_min->SetFillColor(0);
    c_min->SetBorderMode(0);
    c_min->SetBorderSize(2);
@@ -18,23 +18,39 @@ void cal_mass_()
    c_min->SetFrameFillStyle(0);
    c_min->SetFrameBorderMode(0);
    
-   Double_t massGraph_fx1001[1] = {
-   1};
-   Double_t massGraph_fy1001[1] = {
-   0.2269097};
-   Double_t massGraph_fex1001[1] = {
+   Double_t massGraph_fx1001[5] = {
+   1.5,
+   3,
+   4.5,
+   6,
+   7.5};
+   Double_t massGraph_fy1001[5] = {
+   0.582766,
+   3.824095,
+   4.899967,
+   6.71855,
+   9.090744};
+   Double_t massGraph_fex1001[5] = {
+   0,
+   0,
+   0,
+   0,
    0};
-   Double_t massGraph_fey1001[1] = {
-   1.053671e-08};
-   TGraphErrors *gre = new TGraphErrors(1,massGraph_fx1001,massGraph_fy1001,massGraph_fex1001,massGraph_fey1001);
+   Double_t massGraph_fey1001[5] = {
+   0.6928592,
+   0.152635,
+   0.1499794,
+   0.2585853,
+   0.04167287};
+   TGraphErrors *gre = new TGraphErrors(5,massGraph_fx1001,massGraph_fy1001,massGraph_fex1001,massGraph_fey1001);
    gre->SetName("massGraph");
    gre->SetTitle("Graph");
    gre->SetFillColor(1);
    gre->SetMarkerStyle(20);
    
-   TH1F *Graph_massGraph1001 = new TH1F("Graph_massGraph1001","Graph",100,0.9,2.1);
-   Graph_massGraph1001->SetMinimum(0.2269096);
-   Graph_massGraph1001->SetMaximum(0.2269097);
+   TH1F *Graph_massGraph1001 = new TH1F("Graph_massGraph1001","Graph",100,0.9,8.1);
+   Graph_massGraph1001->SetMinimum(-1.034344);
+   Graph_massGraph1001->SetMaximum(10.05667);
    Graph_massGraph1001->SetDirectory(0);
    Graph_massGraph1001->SetStats(0);
    Graph_massGraph1001->SetLineStyle(0);
@@ -62,12 +78,14 @@ void cal_mass_()
    gre->SetHistogram(Graph_massGraph1001);
    
    
-   TF1 *meanFit1002 = new TF1("meanFit","pol1",0.9,2.1);
+   TF1 *meanFit1002 = new TF1("meanFit","pol1",0.9,8.1);
    meanFit1002->SetFillColor(19);
    meanFit1002->SetFillStyle(0);
    meanFit1002->SetMarkerStyle(20);
    meanFit1002->SetLineColor(2);
    meanFit1002->SetLineWidth(1);
+   meanFit1002->SetChisquare(19.65424);
+   meanFit1002->SetNDF(3);
    meanFit1002->GetXaxis()->SetLabelFont(42);
    meanFit1002->GetXaxis()->SetLabelOffset(0.007);
    meanFit1002->GetXaxis()->SetLabelSize(0.05);
@@ -80,16 +98,16 @@ void cal_mass_()
    meanFit1002->GetYaxis()->SetTitleSize(0.06);
    meanFit1002->GetYaxis()->SetTitleOffset(1.25);
    meanFit1002->GetYaxis()->SetTitleFont(42);
-   meanFit1002->SetParameter(0,0);
-   meanFit1002->SetParError(0,0);
+   meanFit1002->SetParameter(0,-0.3398171);
+   meanFit1002->SetParError(0,0.2059615);
    meanFit1002->SetParLimits(0,0,0);
-   meanFit1002->SetParameter(1,0);
-   meanFit1002->SetParError(1,0);
+   meanFit1002->SetParameter(1,1.255073);
+   meanFit1002->SetParError(1,0.02903884);
    meanFit1002->SetParLimits(1,0,0);
    gre->GetListOfFunctions()->Add(meanFit1002);
    gre->Draw("apz");
    
-   TF1 *f21003 = new TF1("f2","pol1",-9,11);
+   TF1 *f21003 = new TF1("f2","pol1",-8.5,17.5);
    f21003->SetFillColor(19);
    f21003->SetFillStyle(0);
    f21003->SetMarkerStyle(20);

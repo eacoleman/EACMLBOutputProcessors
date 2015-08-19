@@ -124,7 +124,7 @@ class MassFit {
 
         void do_toys(int n_exp, int templateToUse);
         int generate_toy(int templateToUse);
-        void calibration(int number = 100);
+        void calibration(int number = 1000);
         void set_overflow_bins(TH1F * h);
         TH1F* templateHisto(const char* type, int i=0);
         TH1F* backgroundHisto(const char* type);
@@ -341,7 +341,7 @@ TStyle* MassFit::setTDRStyle() {
 
 void MassFit::calib(char fn[100],char tag[20]){
     float massPoints[5] = { 1.5, 3.0, 4.5, 6.0, 7.5 };// { 169.5, 171.5, 172.5, 173.5, 175.5};
-//    float fitMass = 4.5;//172.885;//174.03;//172.88;//;173.231;
+    float fitMass = 1.5;//172.885;//174.03;//172.88;//;173.231;
     bool reduced = true;
     float fitUnc = 0.16;//0.596;
 
@@ -545,24 +545,24 @@ void MassFit::calib(char fn[100],char tag[20]){
     gStyle->SetOptStat(0);
     gStyle->SetOptFit(kTRUE);
 
-    cout << "Properties at 4.5:\n";
-    TH1F*   toy_err  = (TH1F*) gDirectory->Get("errMass4.5") ;
+    cout << "Properties at 1.5:\n";
+    TH1F*   toy_err  = (TH1F*) gDirectory->Get("errMass_1.50") ;
     cout << "Toy err is "<<toy_err<<endl;
     toy_err->GetXaxis()->SetTitle("Uncertainty [GeV]");
     toy_err->GetXaxis()->SetNdivisions(505);
     toy_err->GetYaxis()->SetTitleOffset(1.4);
     toy_err->Draw();
     CMS_lumi( c_min, iPeriod, 0 );
-    sprintf(hname,"errMass_4.5_%s.pdf", tag);
+    sprintf(hname,"errMass_1.5_%s.pdf", tag);
     c_min->Print(hname);
-    sprintf(hname,"errMass_4.5_%s.C", tag);
+    sprintf(hname,"errMass_1.5_%s.C", tag);
     c_min->Print(hname);
-    sprintf(hname,"errMass_4.5_%s.png", tag);
+    sprintf(hname,"errMass_1.5_%s.png", tag);
     c_min->Print(hname);
     cout << "Mean uncertainty "<<toy_err->GetMean()<<endl;
 
     gStyle->SetOptFit(1111);
-    TH1F*   toy_mean  = (TH1F*) gDirectory->Get("meanMass_4.5") ;
+    TH1F*   toy_mean  = (TH1F*) gDirectory->Get("meanMass_1.50") ;
     toy_mean->Fit("gaus","Q");
     toy_mean->GetXaxis()->SetTitle("Mass [GeV]");
     toy_mean->GetYaxis()->SetTitleOffset(1.2);
@@ -570,26 +570,26 @@ void MassFit::calib(char fn[100],char tag[20]){
 
     toy_mean->Draw();
     CMS_lumi( c_min, iPeriod, 0 );
-    sprintf(hname,"meanMass_4.5_%s.pdf", tag);
+    sprintf(hname,"meanMass_1.5_%s.pdf", tag);
     c_min->Print(hname);
-    sprintf(hname,"meanMass_4.5_%s.C", tag);
+    sprintf(hname,"meanMass_1.5_%s.C", tag);
     c_min->Print(hname);
-    sprintf(hname,"meanMass_4.5_%s.png", tag);
+    sprintf(hname,"meanMass_1.5_%s.png", tag);
     c_min->Print(hname);
 
     gStyle->SetOptFit(1111);
-    TH1F*   toy_pull  = (TH1F*) gDirectory->Get("pullMass_4.5") ;
+    TH1F*   toy_pull  = (TH1F*) gDirectory->Get("pullMass_1.50") ;
     toy_pull->Fit("gaus","Q");
     toy_pull->GetXaxis()->SetTitle("Pull");
     toy_pull->GetYaxis()->SetTitle("Events/bin");
     toy_pull->GetYaxis()->SetTitleOffset(1.4);
     toy_pull->Draw();
     CMS_lumi( c_min, iPeriod, 0 );
-    sprintf(hname,"pullMass_4.5_%s.pdf", tag);
+    sprintf(hname,"pullMass_1.5_%s.pdf", tag);
     c_min->Print(hname);
-    sprintf(hname,"pullMass_4.5_%s.C", tag);
+    sprintf(hname,"pullMass_1.5_%s.C", tag);
     c_min->Print(hname);
-    sprintf(hname,"pullMass_4.5_%s.png", tag);
+    sprintf(hname,"pullMass_1.5_%s.png", tag);
     c_min->Print(hname);
 
     cout << "Inversion\n";
@@ -604,8 +604,8 @@ void MassFit::calib(char fn[100],char tag[20]){
     float err = sqrt(ae*ae*((fitMass-b)/(a*a))*((fitMass-b)/(a*a)) + be*be/(a*a));
     cout << "calib err: " << err<<endl;
 
-    cout << "Pull at 4.5: "<< pullWFit->Eval(4.5)<<endl;
-    cout << "calbrated stat unc: "<< pullWFit->Eval(4.5)*fitUnc<<endl;
+    cout << "Pull at 1.5: "<< pullWFit->Eval(1.5)<<endl;
+    cout << "calbrated stat unc: "<< pullWFit->Eval(1.5)*fitUnc<<endl;
 
     theFile->Close();
 }
@@ -1344,7 +1344,7 @@ void MassFit::do_toys(int n_exp, int templateToUse)
     }
     if (toy_LL!=0) delete toy_LL;
     cout<<"1332"<<endl;
-    float massPoint = 4.5;
+    float massPoint = 1.5;
     if (!systematics || !systematicsPDF) massPoint = mcSignalTemplMass[templateToUse];
 
     toy_mean   = new TH1F("mean"  ,"Top mass",100, massPoint-3.5, massPoint+3.5);
@@ -1672,7 +1672,7 @@ void MassFit::calibration(int number)
 
     nFitFailed = 0;
     nFitTried = 0;
-    int min=nominalTemplate, max=nominalTemplate+1;
+    int min=nominalTemplate, max=nominalTemplate+5;
     TVectorD x(max-min+1), y(max-min+1), ex(max-min+1), ey(max-min+1);
 
     int pts=0;
@@ -1932,7 +1932,7 @@ void MassFit::printMassRange()
     cout << "Templates: " <<mcSignalTemplMass.size()<<endl;
     for (vector<float>::iterator i = mcSignalTemplMass.begin(); i!= mcSignalTemplMass.end(); ++i)
         cout << i-mcSignalTemplMass.begin()<<" "<<*i<<endl;
-    cout << "Nominal template (mass=4.5): " << nominalTemplate<<endl;
+    cout << "Nominal template (mass=1.5): " << nominalTemplate<<endl;
 }
 
 void MassFit::cmsprelim()

@@ -1,11 +1,11 @@
 void cal_bias_()
 {
 //=========Macro generated from canvas: c_min/
-//=========  (Wed Aug  5 19:37:08 2015) by ROOT version6.02/05
-   TCanvas *c_min = new TCanvas("c_min", "",1683,405,600,600);
+//=========  (Wed Aug 19 10:50:08 2015) by ROOT version6.02/05
+   TCanvas *c_min = new TCanvas("c_min", "",1758,480,600,600);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
-   c_min->Range(0.66,-0.65,2.16,0.6);
+   c_min->Range(-0.5399999,-0.65,8.46,0.6);
    c_min->SetFillColor(0);
    c_min->SetBorderMode(0);
    c_min->SetBorderSize(2);
@@ -18,21 +18,37 @@ void cal_bias_()
    c_min->SetFrameFillStyle(0);
    c_min->SetFrameBorderMode(0);
    
-   Double_t biasGraph_fx1006[1] = {
-   1};
-   Double_t biasGraph_fy1006[1] = {
-   -0.4852774};
-   Double_t biasGraph_fex1006[1] = {
+   Double_t biasGraph_fx1006[5] = {
+   1.5,
+   3,
+   4.5,
+   6,
+   7.5};
+   Double_t biasGraph_fy1006[5] = {
+   -0.917234,
+   0.8240947,
+   0.3999668,
+   0.7185501,
+   1.58136};
+   Double_t biasGraph_fex1006[5] = {
+   0,
+   0,
+   0,
+   0,
    0};
-   Double_t biasGraph_fey1006[1] = {
-   1.053671e-08};
-   TGraphErrors *gre = new TGraphErrors(1,biasGraph_fx1006,biasGraph_fy1006,biasGraph_fex1006,biasGraph_fey1006);
+   Double_t biasGraph_fey1006[5] = {
+   0.6928592,
+   0.152635,
+   0.1499794,
+   0.2585853,
+   0.04167287};
+   TGraphErrors *gre = new TGraphErrors(5,biasGraph_fx1006,biasGraph_fy1006,biasGraph_fex1006,biasGraph_fey1006);
    gre->SetName("biasGraph");
    gre->SetTitle("Graph");
    gre->SetFillColor(1);
    gre->SetMarkerStyle(20);
    
-   TH1F *Graph_biasGraph1006 = new TH1F("Graph_biasGraph1006","Graph",100,0.9,2.1);
+   TH1F *Graph_biasGraph1006 = new TH1F("Graph_biasGraph1006","Graph",100,0.9,8.1);
    Graph_biasGraph1006->SetMinimum(-0.5);
    Graph_biasGraph1006->SetMaximum(0.5);
    Graph_biasGraph1006->SetDirectory(0);
@@ -62,12 +78,14 @@ void cal_bias_()
    gre->SetHistogram(Graph_biasGraph1006);
    
    
-   TF1 *biasFit1007 = new TF1("biasFit","pol1",0.9,2.1);
+   TF1 *biasFit1007 = new TF1("biasFit","pol1",0.9,8.1);
    biasFit1007->SetFillColor(19);
    biasFit1007->SetFillStyle(0);
    biasFit1007->SetMarkerStyle(20);
    biasFit1007->SetLineColor(2);
    biasFit1007->SetLineWidth(1);
+   biasFit1007->SetChisquare(19.46576);
+   biasFit1007->SetNDF(3);
    biasFit1007->GetXaxis()->SetLabelFont(42);
    biasFit1007->GetXaxis()->SetLabelOffset(0.007);
    biasFit1007->GetXaxis()->SetLabelSize(0.05);
@@ -80,11 +98,11 @@ void cal_bias_()
    biasFit1007->GetYaxis()->SetTitleSize(0.06);
    biasFit1007->GetYaxis()->SetTitleOffset(1.25);
    biasFit1007->GetYaxis()->SetTitleFont(42);
-   biasFit1007->SetParameter(0,0);
-   biasFit1007->SetParError(0,0);
+   biasFit1007->SetParameter(0,-0.330888);
+   biasFit1007->SetParError(0,0.2059615);
    biasFit1007->SetParLimits(0,0,0);
-   biasFit1007->SetParameter(1,0);
-   biasFit1007->SetParError(1,0);
+   biasFit1007->SetParameter(1,0.2526513);
+   biasFit1007->SetParError(1,0.02903884);
    biasFit1007->SetParLimits(1,0,0);
    gre->GetListOfFunctions()->Add(biasFit1007);
    gre->Draw("apz");
