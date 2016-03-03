@@ -43,7 +43,7 @@
 #include "TString.h"
 #include "TList.h"
 
-#include "src/th1fmorph.cc"
+#include "th1fmorph.cc"
 
 using std::cout;
 using std::endl;
@@ -82,7 +82,7 @@ const char* yieldLaTeX[6] = { "Drell-Yan", "Diboson", "W+Jets", "QCD", "Single-t
                               "$t\\bar{t}$" };
 const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" };
 const char* signalNames[1] = { "TTbar" };
-const TString outfileName("2012_combined_EACMLB.root");
+const TString outfileName("../2012_combined_EACMLB.root");
 
 /////////////////////////////////////////////////////
 //                      Utils                      //
