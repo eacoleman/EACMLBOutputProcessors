@@ -43,8 +43,6 @@
 #include "TString.h"
 #include "TList.h"
 
-#include "th1fmorph.cc"
-
 using std::cout;
 using std::endl;
 using std::vector;
@@ -74,7 +72,7 @@ using std::cin;
 //                         final-state pair, including data
 //***************************************************************************//
 const char* leps[5]  = { "E", "EE", "EM", "MM", "M" };
-const char* procs[6] = { "DYJets", "WW", "[^T]W[1234]?Jets", "QCD", "SingleTbar", "TTW?Jets" };
+const char* procs[6] = { "DY", "WW", "[^T]W[1234]?Jets", "QCD", "SingleTbar", "TTW?Jets" };
 const char* procReplace[6] = { "DrellYan", "Diboson", "WJets", "QCD", "SingleTop", "TTbar" };
 const char* dataprocs[5] = { "SingleElectron2012A", "DoubleElectron2012A", 
                              "MuEG2012A", "DoubleMu2012A", "SingleMu2012A" };
@@ -82,7 +80,7 @@ const char* yieldLaTeX[6] = { "Drell-Yan", "Diboson", "W+Jets", "QCD", "Single-t
                               "$t\\bar{t}$" };
 const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" };
 const char* signalNames[1] = { "TTbar" };
-const TString outfileName("../2012_combined_EACMLB.root");
+const TString outfileName("../2012_combined_EACTLJ.root");
 
 /////////////////////////////////////////////////////
 //                      Utils                      //
@@ -119,7 +117,6 @@ bool validateArrays() {
 
 //LaTeX formatting for individual results
 TString GetLatex(int lep, int proc) {
-  // output a kickin' TString
   char b[128];
   sprintf(b, "%.0f $\\pm$ %.0f", round(eCounts[lep][proc]), round(eErrors[lep][proc]));
   return TString(b);
@@ -154,7 +151,6 @@ TString GetLatexSum(bool rowSum, int ind) {
     }
   }
  
-  //output a fantastic TString
   char b[128];
   sprintf(b, "%.0f $\\pm$ %.0f", round(sum), round(err));
   return TString(b);
@@ -187,7 +183,6 @@ TString GetLatexRatio(int ind) {
     }
   }
 
-  //output the nicest TString you've ever seen
   char b[128];
   sprintf(b, "%.3f $\\pm$ %.3f", data/sumMC, data/sumMC*sqrt(pow(errData/data,2) + pow(errMC/sumMC,2)));
   return TString(b);
@@ -401,7 +396,7 @@ void getKS(const char* argv[]) {
  *  input:  the main() arguments array
  *  output: writes to an output file the histograms, in a MassFit.C-readable format 
  *
- *  Structure-wise: can be implemented into class easily.
+ *  TODO: implement into class.
  ***********************************/
 void createMFOutfile(const char* argv[]) {
   TFile *f = new TFile(argv[2]);
@@ -472,108 +467,50 @@ void createMFOutfile(const char* argv[]) {
   output->cd();
   output->Close();
 
-  // if we want to interpolate, start making more histograms
-  if(interpolate) {
-    // Have to reopen the outfile because ROOT is odd
-    TFile *output2 = new TFile(outfileName, "UPDATE");
-    output2->cd();
+  // Now we want to collect signal histograms of different weights
+  
+  // Have to reopen the outfile because ROOT is odd
+  TFile *output2 = new TFile(outfileName, "UPDATE");
+  output2->cd();
 
-    std::pair<double,TString> maxPair = *moreFiles.begin();
-    double maxWidth = maxPair.first;
+  // Loop through the additional files
+  for(std::vector<std::pair<double, TString> >::const_iterator pf=moreFiles.begin();
+          pf!=moreFiles.end();
+          pf++) {
 
-    // check that it makes sense to interpolate with our settings
-    if(maxWidth <= nominalWidth) {
-      cout<<"\n\nERROR: Max width is less than or equal to the nominal width! Exiting."<<endl;
-      exit(EXIT_FAILURE);
-    }
+      // This is the current file and width
+      TFile *curFile = new TFile(pf->second, "READ");
+      double curWid  = pf->first;
 
-    // open the input file and loop through the relevant directories
-    TFile *maxFile = new TFile(maxPair.second);
-    for(int i=0; i<lepsSize; i++) {
-      // change directory and get the name of the folder we want to access
-      maxFile->cd();
-      char a[128];
-      sprintf(a, "mlbwa_%s_Mlb", leps[i]);
-      TDirectory *tDir = (TDirectory*) maxFile->Get(a);
-      TList *alok = tDir->GetListOfKeys();
+      // Loop through lepton final states
+      for(int i=0; i<lepsSize; i++) {
+          curFile->cd();
 
-      // get the maxWidth histogram in this folder, clone and rename it
-      TString maxHName = alok->First()->GetName();
-      TString maxCloneName = formatName(maxHName, maxWidth);
-      TH1F *maxHisto = (TH1F*) tDir->Get(maxHName);
-      TH1F *maxClone = (TH1F*) maxHisto->Clone(maxCloneName);
+          // Get the desired directory
+          char dirName[128];
+          sprintf(dirName, "mlbwa_%s_Mlb", leps[i]);
+          TDirectory *curDir = (TDirectory*) curFile->Get(dirName);
 
-      // write this max histogram to the outfile
-      output2->cd();
-      maxClone->Write();
+          // Get the names of the first histogram in the directory
+          //     (we don't want more than one additional signal histo per extra file)
+          // Format it with the usual method
+          TString histName   = TString(curDir->GetListOfKeys()->First()->GetName());
+          TString cloneName  = formatName(histName,curWid);
 
-      // get the corresponding nominal histogram from the outfile
-      TH1F *nomHisto = (TH1F*) output2->Get(formatName(maxHName,nominalWidth));
+          // Get the mlb histo
+          TH1D *curHisto = (TH1D*) curDir->Get(histName)->Clone(cloneName);
 
-      TCanvas *c = new TCanvas("");
-      nomHisto->Draw();
-      c->SaveAs(formatName(maxHName,nominalWidth)+TString(".pdf"));
-
-
-      // for each interpolation, create a morphed histogram and write to outfile
-      for(int i=interpolations; i>0; i--) {
-        double tWidth = nominalWidth + i*(maxWidth - nominalWidth)/(interpolations+1);
-        TString interpName = formatName(maxHName, tWidth);
-        TH1F *interpHisto = (TH1F*) th1fmorph(interpName, interpName,nomHisto,maxHisto,
-                                               nominalWidth,maxWidth,tWidth,nomHisto->Integral(),1);
-        interpHisto->Write();
+          // Write to the outfile
+          output2->cd();
+          curHisto->Write();
       }
-    }
 
-    maxFile->cd();
-    maxFile->Close();
-    output2->cd();
-    output2->Close();
-
-    // Otherwise, we want to collect signal histograms of different weights
-  } else {
-    // Have to reopen the outfile because ROOT is odd
-    TFile *output2 = new TFile(outfileName, "UPDATE");
-    output2->cd();
-
-    // Loop through the additional files
-    for(std::vector<std::pair<double, TString> >::const_iterator pf=moreFiles.begin();
-                                                                 pf!=moreFiles.end();
-                                                                 pf++) {
-
-        // This is the current file and width
-        TFile *curFile = new TFile(pf->second, "READ");
-        double curWid  = pf->first;
-
-        // Loop through lepton final states
-        for(int i=0; i<lepsSize; i++) {
-            curFile->cd();
-
-            // Get the desired directory
-            char dirName[128];
-            sprintf(dirName, "mlbwa_%s_Mlb", leps[i]);
-            TDirectory *curDir = (TDirectory*) curFile->Get(dirName);
-
-            // Get the names of the first histogram in the directory
-            //     (we don't want more than one additional signal histo per extra file)
-            // Format it with the usual method
-            TString histName   = TString(curDir->GetListOfKeys()->First()->GetName());
-            TString cloneName  = formatName(histName,curWid);
-            
-            // Get the mlb histo
-            TH1D *curHisto = (TH1D*) curDir->Get(histName)->Clone(cloneName);
-
-            // Write to the outfile
-            output2->cd();
-            curHisto->Write();
-        }
-
-        curFile->Close();
-    }
-
-    output2->cd();
-    output2->Close();
+      curFile->Close();
   }
+
+  output2->cd();
+  output2->Close();
+
 
 }
 
@@ -582,26 +519,8 @@ void createMFOutfile(const char* argv[]) {
 #ifndef __CINT__
 int main(int argc, const char* argv[]) {
   if(argc>3) {
-    char yorn;
-    cout<<"Detected more than one width-input file pair. Interpolate? (y or n): ";
-    cin >> yorn;
-
-    interpolate = false;
-    if(yorn == 'y') interpolate = true;
-
-    cout<<"Setting interpolation to "<<interpolate<<endl;
-    if(interpolate) { 
-      cout<<"NOTE: Interpolation args have format <width1> <file1> "
-          <<"<width2> <file2> <num of interpolations>"<<endl;
-      if(argc<6) { 
-        cout<<" - you did not format your arguments correctly, exiting..."<<endl;
-        exit(EXIT_FAILURE);
-      }
-
-      interpolations = TString(argv[5]).Atof();
-    }
-
-    cout<<"Adding in files:"<<endl;
+    cout<<"Detected more than one width-input file pair. Adding in files..."<<endl;
+    
     for(int i=3; i+1<argc; i+=2) {
       cout<<" - width "<<argv[i]<<" and location "<<argv[i+1]<<endl;
       std::pair<double, TString> tpair(TString(argv[i]).Atof(), TString(argv[i+1]));
@@ -629,7 +548,5 @@ int main(int argc, const char* argv[]) {
   cout<<"\n\nLet me write the MassFit-readable file for you as well..."<<endl;
   createMFOutfile(argv);
   cout<<"...done!"<<endl; 
-
-  return 0;
 }
 #endif
