@@ -59,9 +59,6 @@ using std::cin;
 //  o char*[] procReplace - contains the names we'd like to use to replace the
 //                          given process names when we output everything to
 //                          a MassFit_print-formatted root file
-//  o char*[] dataprocs - Key words to look for in the titles of data
-//                        data histograms. They should correspond in order 
-//                        to leps
 //  o char*[] yieldLaTeX - The LaTeX to use for each procs[i] name in the 
 //                         yields table
 //  o TString outfileName - What title to give the MassFit-formatted output
@@ -72,15 +69,13 @@ using std::cin;
 //                         final-state pair, including data
 //***************************************************************************//
 const char* leps[5]  = { "E", "EE", "EM", "MM", "M" };
-const char* procs[6] = { "DY", "WW", "[^T]W[1234]?Jets", "QCD", "SingleTbar", "TTW?Jets" };
-const char* procReplace[6] = { "DrellYan", "Diboson", "WJets", "QCD", "SingleTop", "TTbar" };
-const char* dataprocs[5] = { "SingleElectron2012A", "DoubleElectron2012A", 
-                             "MuEG2012A", "DoubleMu2012A", "SingleMu2012A" };
-const char* yieldLaTeX[6] = { "Drell-Yan", "Diboson", "W+Jets", "QCD", "Single-top", 
-                              "$t\\bar{t}$" };
+const char* procs[6] = { "DY", "tW", "t-ch", "TTbar" };
+const char* procReplace[4] = { "DrellYan", "SingleTop-tW", "SingleTop-t", "TTbar" };
+const char* yieldLaTeX[6] = { "Drell-Yan", "tW", "t-channel", "$t\\bar{t}$" };
 const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" };
 const char* signalNames[1] = { "TTbar" };
 const TString outfileName("../2012_combined_EACTLJ.root");
+const TString choiceMLB("min"); 
 
 /////////////////////////////////////////////////////
 //                      Utils                      //
@@ -90,7 +85,6 @@ const TString outfileName("../2012_combined_EACTLJ.root");
 const int lepsSize          = GETARRSIZE(leps);
 const int procsSize         = GETARRSIZE(procs);
 const int procReplaceSize   = GETARRSIZE(procReplace);
-const int dataprocsSize     = GETARRSIZE(dataprocs);
 const int yieldLaTeXSize    = GETARRSIZE(yieldLaTeX);
 const int lepsLaTeXSize     = GETARRSIZE(lepsLaTeX);
 const int signalNamesLength = GETARRSIZE(signalNames);
@@ -99,14 +93,11 @@ double eCounts[lepsSize][procsSize+1];
 double eErrors[lepsSize][procsSize+1];
 
 double nominalWidth = 1.5;
-vector<std::pair<double, TString> > moreFiles;
-bool interpolate = false;
-int interpolations = 0;
+vector<double> moreWidths;
 
 //Returns true if the arrays are sized properly
 bool validateArrays() {
   return (lepsSize      == lepsLaTeXSize
-           && lepsSize  == dataprocsSize
            && procsSize == procReplaceSize
            && procsSize == yieldLaTeXSize);
 }
@@ -193,30 +184,28 @@ TString GetLatexRatio(int ind) {
 /////////////////////////////////////////////////////
 
 TString formatName(const char* histoName, double signalWidth) {
-    TObjArray *nameParts = (TObjArray*) TString(histoName).ReplaceAll("_mlbwa_",'#').Tokenize(TString("#"));
-
-    cout<<nameParts->At(0)->GetName()<<" "<<nameParts->At(1)->GetName()<<endl;
-    // get the two significant parts of the name and split into relevant information
-    TObjArray *procPart = (TObjArray*) TString(nameParts->At(0)->GetName()).Tokenize("_");
-    TObjArray *histPart = (TObjArray*) TString(nameParts->At(1)->GetName()).Tokenize("_");
+    TObjArray *nameParts = (TObjArray*) TString(histoName).Tokenize("_");
 
     // obtain useful TStrings
-    TString proces = TString(procPart->At(1)->GetName());
-    TString lepton = TString(histPart->At(0)->GetName());
+    TString proces = TString(nameParts->At(1)->GetName());
+    TString lepton = TString(nameParts->Last()->GetName());
     TString delmtr = TString("_");
 
     // if data, just say data 
-    if(TString(procPart->At(0)->GetName()).Contains("Data")) proces = TString("Data");
+    // if(TString(procPart->At(0)->GetName()).Contains("Data")) proces = TString("Data");
+    if(nameParts->GetSize() < 4) proces = TString("Data");
     else {
       cout<<" - formatting "<<proces<<endl;
+
       for(int pInd = 0; pInd<procsSize; pInd++) {
+
+        // if the regular expression matches
         if((delmtr+proces).Contains(TRegexp(procs[pInd]))) {
             cout<<" -- match found, "<<procs[pInd]<<endl;
             proces = procReplace[pInd];
             cout<<" -- procs now = "<<proces<<endl;
 
-            // loop through the signal names and format with signalWidth if
-            // there's a match (i.e., mlbwa__TTbar_7.5_E)
+            // loop through the signal names and format with signalWidth
             for(int sigCheck=0; sigCheck<signalNamesLength; sigCheck++) {
               if(proces==signalNames[sigCheck]) {
                 cout<<" --- checking against "<<signalNames[sigCheck]<<endl;
@@ -372,7 +361,7 @@ void getKS(const char* argv[]) {
     TList *aloh   = new TList;
     // loop through keys (histograms) in current directory
     for(int ihisto=0; alokHistos->At(ihisto) != alokHistos->Last(); ihisto++) {
-      if(TString(alokHistos->At(ihisto)->GetName()).Contains("MC8TeV")) {
+      if(TString(alokHistos->At(ihisto)->GetName()).Contains("MC13TeV")) {
         TH1F *cHisto = (TH1F*) cDir->Get(alokHistos->At(ihisto)->GetName());
         aloh->Add(cHisto);
       }
@@ -414,7 +403,7 @@ void createMFOutfile(const char* argv[]) {
   //loop through the directories in the input file
   for(int idir=0; alokDirs->At(idir-1) != alokDirs->Last(); idir++) {
     //if it's not mlb, we don't care
-    if(!TString(alokDirs->At(idir)->GetName()).Contains("_Mlb")) continue;
+    if(!TString(alokDirs->At(idir)->GetName()).Contains("_Mlb_"+choiceMLB)) continue;
     
     //get the file directory information, its histograms
     TDirectory *cDir  = (TDirectory*) f->Get(alokDirs->At(idir)->GetName());
@@ -463,33 +452,22 @@ void createMFOutfile(const char* argv[]) {
     }
   }
 
-  f->Close();
-  output->cd();
-  output->Close();
-
   // Now we want to collect signal histograms of different weights
   
-  // Have to reopen the outfile because ROOT is odd
-  TFile *output2 = new TFile(outfileName, "UPDATE");
-  output2->cd();
-
-  // Loop through the additional files
-  for(std::vector<std::pair<double, TString> >::const_iterator pf=moreFiles.begin();
-          pf!=moreFiles.end();
-          pf++) {
+  // Loop through the additional widths
+  for(size_t iWid = 0; iWid < moreWidths.size(); iWid++) {
 
       // This is the current file and width
-      TFile *curFile = new TFile(pf->second, "READ");
-      double curWid  = pf->first;
+      double curWid  = moreWidths.at(iWid);
 
       // Loop through lepton final states
       for(int i=0; i<lepsSize; i++) {
-          curFile->cd();
+          f->cd();
 
           // Get the desired directory
           char dirName[128];
-          sprintf(dirName, "mlbwa_%s_Mlb", leps[i]);
-          TDirectory *curDir = (TDirectory*) curFile->Get(dirName);
+          sprintf(dirName, "mlbwa_%s_%.2f_Mlb_%s", leps[i], curWid, choiceMLB.Data());
+          TDirectory *curDir = (TDirectory*) f->Get(dirName);
 
           // Get the names of the first histogram in the directory
           //     (we don't want more than one additional signal histo per extra file)
@@ -501,16 +479,14 @@ void createMFOutfile(const char* argv[]) {
           TH1D *curHisto = (TH1D*) curDir->Get(histName)->Clone(cloneName);
 
           // Write to the outfile
-          output2->cd();
+          output->cd();
           curHisto->Write();
       }
-
-      curFile->Close();
   }
 
-  output2->cd();
-  output2->Close();
-
+  f->Close();
+  output->cd();
+  output->Close();
 
 }
 
@@ -519,12 +495,11 @@ void createMFOutfile(const char* argv[]) {
 #ifndef __CINT__
 int main(int argc, const char* argv[]) {
   if(argc>3) {
-    cout<<"Detected more than one width-input file pair. Adding in files..."<<endl;
+    cout<<"Detected more than one width-input width. Adding in..." << endl;
     
     for(int i=3; i+1<argc; i+=2) {
-      cout<<" - width "<<argv[i]<<" and location "<<argv[i+1]<<endl;
-      std::pair<double, TString> tpair(TString(argv[i]).Atof(), TString(argv[i+1]));
-      moreFiles.push_back(tpair); 
+      cout<<" - width "<<argv[i]<<endl;
+      moreWidths.push_back(TString(argv[i]).Atof()); 
     }
 
     cout<<"\n"<<endl;
