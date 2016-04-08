@@ -69,12 +69,12 @@ using std::cin;
 //                         final-state pair, including data
 //***************************************************************************//
 const char* leps[5]  = { "E", "EE", "EM", "MM", "M" };
-const char* procs[6] = { "DY", "tW", "t-ch", "TTbar" };
+const char* procs[4] = { "DY", "tW", "t-ch", "TTbar" };
 const char* procReplace[4] = { "DrellYan", "SingleTop-tW", "SingleTop-t", "TTbar" };
-const char* yieldLaTeX[6] = { "Drell-Yan", "tW", "t-channel", "$t\\bar{t}$" };
+const char* yieldLaTeX[4] = { "Drell-Yan", "tW", "t-channel", "$t\\bar{t}$" };
 const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" };
 const char* signalNames[1] = { "TTbar" };
-const TString outfileName("../2012_combined_EACTLJ.root");
+const TString outfileName("2012_combined_EACTLJ.root");
 const TString choiceMLB("min"); 
 
 /////////////////////////////////////////////////////
@@ -187,13 +187,13 @@ TString formatName(const char* histoName, double signalWidth) {
     TObjArray *nameParts = (TObjArray*) TString(histoName).Tokenize("_");
 
     // obtain useful TStrings
-    TString proces = TString(nameParts->At(1)->GetName());
-    TString lepton = TString(nameParts->Last()->GetName());
+    TString lepton = TString(nameParts->At(1)->GetName());
+    TString proces = TString(nameParts->Last()->GetName());
     TString delmtr = TString("_");
 
     // if data, just say data 
     // if(TString(procPart->At(0)->GetName()).Contains("Data")) proces = TString("Data");
-    if(nameParts->GetSize() < 4) proces = TString("Data");
+    if(nameParts->GetSize() < 5 || proces == choiceMLB) proces = TString("Data");
     else {
       cout<<" - formatting "<<proces<<endl;
 
@@ -340,11 +340,9 @@ void getYields(const char* argv[]) {
  *        for each field, and compares the MC with the Data histogram using a KS test
  *  input:  the main() arguments array
  *  output: writes to stdout the (human-readable) KS statistics of pairs of histograms
- *
- *  Structure-wise: this is fine, can be implemented into class easily.
  ***********************************/
 void getKS(const char* argv[]) {
-  //open the input TFile
+  
   TFile *f = new TFile(argv[2]);
   f->cd();
 
@@ -353,21 +351,21 @@ void getKS(const char* argv[]) {
 
   //loop through the directories in the input file
   for(int idir=0; alokDirs->At(idir-1) != alokDirs->Last(); idir++) {
+
     TDirectory *cDir  = (TDirectory*) f->Get(alokDirs->At(idir)->GetName());
     TList *alokHistos = (TList*)      cDir->GetListOfKeys();
 
     // create the MC histogram and start collecting relevant MC histograms
-    // from the current directory
     TList *aloh   = new TList;
-    // loop through keys (histograms) in current directory
+
+    // loop through histograms in current directory
     for(int ihisto=0; alokHistos->At(ihisto) != alokHistos->Last(); ihisto++) {
-      if(TString(alokHistos->At(ihisto)->GetName()).Contains("MC13TeV")) {
+        if(alokHistos->At(ihisto+1) == alokHistos->Last()) continue;
         TH1F *cHisto = (TH1F*) cDir->Get(alokHistos->At(ihisto)->GetName());
         aloh->Add(cHisto);
-      }
     }
  
-    //merge the data histograms into one histogram
+    //merge the mc histograms into one
     TH1F *MCHisto = (TH1F*) (aloh->Last())->Clone(TString(cDir->GetName()) + TString("MCHisto"));
     aloh->RemoveLast();
     MCHisto->Merge(aloh);
@@ -375,7 +373,8 @@ void getKS(const char* argv[]) {
     cout<<"-------------------- "<<cDir->GetName()<<" -----------------------"<<endl;
     //now create the data histogram and run the KS test
     TH1F *DataHisto = (TH1F*) cDir->Get(alokHistos->Last()->GetName());
-    cout<<"  ---> KS Test: "<<cDir->GetName()<<" has probability "<<MCHisto->KolmogorovTest(DataHisto, "D")<<"\n"<<endl;
+    cout << "  ---> KS Test: " << cDir->GetName()   << " has probability " 
+         << MCHisto->KolmogorovTest(DataHisto, "D") << "\n" << endl;
   }
 }
 
@@ -384,33 +383,32 @@ void getKS(const char* argv[]) {
  *                  R. Nally's MassFit.C code.
  *  input:  the main() arguments array
  *  output: writes to an output file the histograms, in a MassFit.C-readable format 
- *
- *  TODO: implement into class.
  ***********************************/
 void createMFOutfile(const char* argv[]) {
+  
   TFile *f = new TFile(argv[2]);
-
-  //create the output file we'd like to write histograms to
   TFile *output = new TFile(outfileName, "RECREATE");
   
-  //get the filesystem information from the file
+  // get filesystem information
   f->cd();
   TList *alokDirs = (TList*) f->GetListOfKeys();
 
-  //create a list of "All" histograms and initialize (TODO)
+  // create list of "All" histograms and initialize (TODO)
   TList *allHists = new TList;
 
-  //loop through the directories in the input file
+  // loop through directories input file
   for(int idir=0; alokDirs->At(idir-1) != alokDirs->Last(); idir++) {
-    //if it's not mlb, we don't care
+
+    // must contain mlb 
     if(!TString(alokDirs->At(idir)->GetName()).Contains("_Mlb_"+choiceMLB)) continue;
     
-    //get the file directory information, its histograms
+    // get file directory information
     TDirectory *cDir  = (TDirectory*) f->Get(alokDirs->At(idir)->GetName());
     TList *alokHistos = (TList*)      cDir->GetListOfKeys();
 
-    //loop through the histograms in the current directory 
+    // loop through the histograms in the current directory 
     for(int ihisto=0; alokHistos->At(ihisto-1) != alokHistos->Last(); ihisto++) {
+
       // don't consider the graph objects
       if(TString(alokHistos->At(ihisto)->GetName()).Contains("Graph_")) continue; 
 
@@ -419,12 +417,11 @@ void createMFOutfile(const char* argv[]) {
       TH1F *thisto = (TH1F*) cDir->Get(alokHistos->At(ihisto)->GetName());
       TH1F *tclone = (TH1F*) thisto->Clone(cloneName);
 
-      // open the outfile and write the histo in
+      // open outfile and write histo 
       output->cd();
       TList *outkeys = (TList*) output->GetListOfKeys();
 
-      // if the histogram already exists, add thisto to the existing one
-      // messy, but removes the need for magic
+      // if histogram already exists, add thisto to the existing one
       for(int iout=0; outkeys->At(iout-1) != outkeys->Last(); iout++) {
         if(outkeys->At(iout)->GetName() == cloneName) {
           cout<<" - found another histogram in output with name "<<cloneName<<endl;
@@ -445,7 +442,7 @@ void createMFOutfile(const char* argv[]) {
       cout<<" - writing the tclone to file"<<endl;
       tclone->Write();
 
-      // reopen the input root file and clean up
+      // clean up
       f->cd();
       delete thisto;
       delete tclone;
@@ -457,31 +454,30 @@ void createMFOutfile(const char* argv[]) {
   // Loop through the additional widths
   for(size_t iWid = 0; iWid < moreWidths.size(); iWid++) {
 
-      // This is the current file and width
+      // current width
       double curWid  = moreWidths.at(iWid);
 
       // Loop through lepton final states
       for(int i=0; i<lepsSize; i++) {
           f->cd();
 
-          // Get the desired directory
+          // Get desired directory
           char dirName[128];
           sprintf(dirName, "mlbwa_%s_%.2f_Mlb_%s", leps[i], curWid, choiceMLB.Data());
           TDirectory *curDir = (TDirectory*) f->Get(dirName);
 
           // Get the names of the first histogram in the directory
           //     (we don't want more than one additional signal histo per extra file)
-          // Format it with the usual method
           TString histName   = TString(curDir->GetListOfKeys()->First()->GetName());
           TString cloneName  = formatName(histName,curWid);
 
-          // Get the mlb histo
+          // Get mlb histo
           TH1D *curHisto = (TH1D*) curDir->Get(histName)->Clone(cloneName);
 
-          // Write to the outfile
+          // Write to outfile
           output->cd();
           curHisto->Write();
-      }
+       }
   }
 
   f->Close();
@@ -494,9 +490,11 @@ void createMFOutfile(const char* argv[]) {
 
 #ifndef __CINT__
 int main(int argc, const char* argv[]) {
+
+  // process arguments
   if(argc>3) {
     cout<<"Detected more than one width-input width. Adding in..." << endl;
-    
+
     for(int i=3; i+1<argc; i+=2) {
       cout<<" - width "<<argv[i]<<endl;
       moreWidths.push_back(TString(argv[i]).Atof()); 
@@ -508,20 +506,25 @@ int main(int argc, const char* argv[]) {
   cout<<"Analyzing the output: "<<argv[2]<<" with nominal width "<<argv[1]<<"\n\n"<<endl;
   nominalWidth = TString(argv[1]).Atof();
 
+  // check if program is setup properly
   if(!validateArrays()) {
     cout<<"Arrays not formatted properly. Please check your "
         <<"input and recompile."<<endl;
     exit(EXIT_FAILURE);
   }
 
+  // YIELDS
   cout<<"Here is the LaTeX for the yields table:"<<endl;
   getYields(argv);
 
+  // KS
   cout<<"\n\nHere is the KS information for the histograms:"<<endl;
   getKS(argv); 
 
+  // RooPoisson OUTFILE
   cout<<"\n\nLet me write the MassFit-readable file for you as well..."<<endl;
   createMFOutfile(argv);
-  cout<<"...done!"<<endl; 
+
+  cout<<"\n\n...done!"<<endl; 
 }
 #endif
