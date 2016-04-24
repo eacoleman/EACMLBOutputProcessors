@@ -74,7 +74,7 @@ const char* procReplace[4] = { "DrellYan", "SingleTop-tW", "SingleTop-t", "TTbar
 const char* yieldLaTeX[4] = { "Drell-Yan", "tW", "t-channel", "$t\\bar{t}$" };
 const char* lepsLaTeX[5] = { "e", "ee", "e$\\mu$", "$\\mu\\mu$", "$\\mu$" };
 const char* signalNames[1] = { "TTbar" };
-const TString outfileName("2012_combined_EACTLJ.root");
+const TString outfileName("2012_combined_EACTLJ");
 const TString choiceMLB("min"); 
 
 /////////////////////////////////////////////////////
@@ -155,7 +155,7 @@ TString GetLatexRatio(int ind) {
   double errData = 0;
   //if we want to look at data/MC for just one column, do so
   if(ind<=lepsSize && ind>0) {
-    data = eCounts[ind-1][procsSize];
+    data    = eCounts[ind-1][procsSize];
     errData = eErrors[ind-1][procsSize];
 
     for(int i=0; i<procsSize; i++) {
@@ -165,7 +165,7 @@ TString GetLatexRatio(int ind) {
   } else {
     // if not, sum all of MC and data and take the ratios
     for(int i=0; i<lepsSize; i++) {
-      data    += eCounts[i][ind];
+      data    += eCounts[i][procsSize];
       errData =  sqrt(pow(errData,2) + pow(eErrors[i][ind],2));
       for(int j=0; j<procsSize; j++) {
         sumMC += eCounts[i][j];
@@ -250,7 +250,7 @@ void getYields(const char* argv[]) {
     TList *alok = tDir->GetListOfKeys();
 
     for(int j=0; j<procsSize; j++) {
-      for(int k=0; alok->At(k)->GetName() != alok->Last()->GetName(); k++) {
+      for(int k=0; k < alok->GetSize(); k++) {
         if(TString(alok->At(k)->GetName()).Contains(TRegexp(procs[j]))) {
           char b[128];
           sprintf(b, "mlbwa_%s_Count/%s", leps[i], alok->At(k)->GetName());
@@ -262,16 +262,27 @@ void getYields(const char* argv[]) {
           delete h;
         }
       }
+
+      if(eErrors[i][j] == 0 && eCounts[i][j] > 0) {
+          cout << "Errors are 0 for i = " << i << ", j = " << j << "." << endl;
+          eErrors[i][j] = sqrt(eCounts[i][j]);
+      }
     }
 
+    // data information
     char d[128];
-    sprintf(d, "mlbwa_%s_Count/%s", leps[i], alok->Last()->GetName());
-    if(d == "") { exit(EXIT_FAILURE); }
+    sprintf(d, "mlbwa_%s_Count/mlbwa_%s_Count", leps[i], leps[i]);
 
     TH1F *tth = (TH1F*) f->Get(d);
     eCounts[i][procsSize] = tth->GetEntries();
     double integral = tth->GetSumOfWeights();
     eErrors[i][procsSize] = tth->GetBinError(2)*eCounts[i][procsSize]/integral;
+    
+    if(eErrors[i][procsSize] == 0 && eCounts[i][procsSize] > 0) {
+        cout << "Errors are 0 for i = " << i << ", data." << endl;
+        eErrors[i][procsSize] = sqrt(eCounts[i][procsSize]);
+    }
+
     delete tth;
   }
 
@@ -319,14 +330,14 @@ void getYields(const char* argv[]) {
   //Print out the data yield
   cout<<"Data & ";
   for(int i=0; i<lepsSize; i++) {
-    cout<<GetLatex(i,lepsSize+1)<<" & ";
+    cout<<GetLatex(i,procsSize)<<" & ";
   }
-  cout<<GetLatexSum(true,lepsSize+1)<<"\\\\\\hline\\hline"<<endl;
+  cout<<GetLatexSum(true,procsSize)<<"\\\\\\hline\\hline"<<endl;
   
   //Print out the data:MC ratio
   cout<<"Data/MC & ";
-  for(int i=1; i<=procsSize;i++) {
-    cout<<GetLatexRatio(i)<<(i==procsSize ? "" : " & ");
+  for(int i=1; i<=lepsSize+1;i++) {
+    cout<<GetLatexRatio(i)<<(i==lepsSize+1 ? "" : " & ");
   }
   cout<<"\\\\"<<endl;
 
@@ -350,30 +361,36 @@ void getKS(const char* argv[]) {
   TList *alokDirs = (TList*) f->GetListOfKeys();
 
   //loop through the directories in the input file
-  for(int idir=0; alokDirs->At(idir-1) != alokDirs->Last(); idir++) {
+  for(size_t idir=0; idir < alokDirs->GetSize(); idir++) {
 
     TDirectory *cDir  = (TDirectory*) f->Get(alokDirs->At(idir)->GetName());
     TList *alokHistos = (TList*)      cDir->GetListOfKeys();
+
+
+    if(alokHistos->GetSize() < 2) continue;
+    if(TString(cDir->GetName()).Contains("Tcmp")) continue;
+    if(TString(cDir->GetName()).Contains("ratevsrun")) continue;
 
     // create the MC histogram and start collecting relevant MC histograms
     TList *aloh   = new TList;
 
     // loop through histograms in current directory
-    for(int ihisto=0; alokHistos->At(ihisto) != alokHistos->Last(); ihisto++) {
-        if(alokHistos->At(ihisto+1) == alokHistos->Last()) continue;
+    for(int ihisto=0; ihisto < alokHistos->GetSize(); ihisto++) {
         TH1F *cHisto = (TH1F*) cDir->Get(alokHistos->At(ihisto)->GetName());
+
+        if(TString(cHisto->GetName()).Contains("Graph")) continue;
+        if(TString(cHisto->GetName()) == TString(cDir->GetName())) continue;
         aloh->Add(cHisto);
     }
- 
-    //merge the mc histograms into one
+
     TH1F *MCHisto = (TH1F*) (aloh->Last())->Clone(TString(cDir->GetName()) + TString("MCHisto"));
     aloh->RemoveLast();
     MCHisto->Merge(aloh);
 
-    cout<<"-------------------- "<<cDir->GetName()<<" -----------------------"<<endl;
     //now create the data histogram and run the KS test
-    TH1F *DataHisto = (TH1F*) cDir->Get(alokHistos->Last()->GetName());
-    cout << "  ---> KS Test: " << cDir->GetName()   << " has probability " 
+    cout<<"-------------------- "<<cDir->GetName()<<" -----------------------"<<endl;
+    TH1F *DataHisto = (TH1F*) cDir->Get(cDir->GetName());
+    cout << "  ---> KS Test: " << DataHisto->GetName()   << " has probability " 
          << MCHisto->KolmogorovTest(DataHisto, "D") << "\n" << endl;
   }
 }
@@ -387,7 +404,7 @@ void getKS(const char* argv[]) {
 void createMFOutfile(const char* argv[]) {
   
   TFile *f = new TFile(argv[2]);
-  TFile *output = new TFile(outfileName, "RECREATE");
+  TFile *output = new TFile(TString(outfileName)+"_"+argv[3]+".root", "RECREATE");
   
   // get filesystem information
   f->cd();
@@ -435,7 +452,6 @@ void createMFOutfile(const char* argv[]) {
 
           cout<<" - deleting the original histogram from the output file"<<endl;
           output->Delete(cloneName + TString(";1"));
-          cout<<" - deleted thing from output file"<<endl;
           cout<<" - tclone looks like "<<tclone<<endl;
         }
       }
@@ -451,10 +467,9 @@ void createMFOutfile(const char* argv[]) {
 
   // Now we want to collect signal histograms of different weights
   
+  cout << "LOOP BEGINNING" << endl;
   // Loop through the additional widths
   for(size_t iWid = 0; iWid < moreWidths.size(); iWid++) {
-
-      // current width
       double curWid  = moreWidths.at(iWid);
 
       // Loop through lepton final states
@@ -462,8 +477,10 @@ void createMFOutfile(const char* argv[]) {
           f->cd();
 
           // Get desired directory
-          char dirName[128];
-          sprintf(dirName, "mlbwa_%s_%.2f_Mlb_%s", leps[i], curWid, choiceMLB.Data());
+          char tdirName[128];
+          sprintf(tdirName, "mlbwa_%s_%.2f_Mlb_%s", leps[i], curWid, choiceMLB.Data());
+          TString dirName = TString(tdirName).ReplaceAll(".", "p");
+
           TDirectory *curDir = (TDirectory*) f->Get(dirName);
 
           // Get the names of the first histogram in the directory
@@ -492,10 +509,10 @@ void createMFOutfile(const char* argv[]) {
 int main(int argc, const char* argv[]) {
 
   // process arguments
-  if(argc>3) {
+  if(argc>4) {
     cout<<"Detected more than one width-input width. Adding in..." << endl;
 
-    for(int i=3; i+1<argc; i+=2) {
+    for(int i=4; i<argc; i++) {
       cout<<" - width "<<argv[i]<<endl;
       moreWidths.push_back(TString(argv[i]).Atof()); 
     }
@@ -518,12 +535,12 @@ int main(int argc, const char* argv[]) {
   getYields(argv);
 
   // KS
-  cout<<"\n\nHere is the KS information for the histograms:"<<endl;
-  getKS(argv); 
+  //cout<<"\n\nHere is the KS information for the histograms:"<<endl;
+  //getKS(argv); 
 
   // RooPoisson OUTFILE
-  cout<<"\n\nLet me write the MassFit-readable file for you as well..."<<endl;
-  createMFOutfile(argv);
+  //cout<<"\n\nLet me write the MassFit-readable file for you as well..."<<endl;
+  //createMFOutfile(argv);
 
   cout<<"\n\n...done!"<<endl; 
 }
